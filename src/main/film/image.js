@@ -14,13 +14,13 @@ export async function generateFilmImage(opts) {
   const fallbackReady = isReady(opts.engine === "fal" ? "fal" : "google_image");
   if (flowImagesReady()) {
     try {
-      const signal = AbortSignal.any([opts.signal, AbortSignal.timeout(FLOW_IMAGE_TIMEOUT_MS)]);
       const file = await flowGenerateImage({
         prompt: opts.prompt,
         aspect: opts.aspect,
         refs: refs.slice(0, 3),
         destBase: opts.destBase,
-        signal,
+        signal: opts.signal,
+        attemptTimeoutMs: FLOW_IMAGE_TIMEOUT_MS,
       });
       return { file, model: FLOW_IMAGE_LABEL, costUsd: 0 };
     } catch (err) {

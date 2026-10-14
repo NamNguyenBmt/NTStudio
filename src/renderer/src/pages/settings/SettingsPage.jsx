@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useApiQuery, useApiMutation } from "../../lib/api";
 import { useSearchParams } from "react-router-dom";
 import {
+  ArrowRight,
   AudioLines,
   Brain,
   Clapperboard,
@@ -11,6 +12,7 @@ import {
   Lock,
   Music,
   PlugZap,
+  Route,
   Save,
   Settings2,
   Share2,
@@ -20,7 +22,6 @@ import {
 import { cn } from "../../lib/cn";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
-import { Select } from "../../components/ui/Input";
 import { Kbd } from "../../components/ui/Kbd";
 import { StatusDot } from "../../components/ui/StatusDot";
 import { toast } from "../../components/ui/toast";
@@ -34,6 +35,7 @@ import { PricingCard } from "./PricingCard";
 import { RoutingCard } from "./RoutingCard";
 import { ProviderRow } from "./ProviderRow";
 import { LocalTtsCard } from "./LocalTtsCard";
+import { MediaSourcesCard } from "./MediaSourcesCard";
 import { FlowCard } from "./FlowCard";
 import { OmniraAiCard } from "./OmniraAiCard";
 import { InstagramSetting, YoutubePublishSettings } from "./PublishSettings";
@@ -104,6 +106,7 @@ function PublishTab() {
 }
 
 function AiTab() {
+  const [, setParams] = useSearchParams();
   const { data: providers = [] } = useApiQuery("ai.providers");
   const { data: vault } = useApiQuery("vault.info");
   const { data: budget } = useApiQuery("settings.budget");
@@ -215,12 +218,22 @@ function AiTab() {
             </div>
             <LocalTtsCard />
           </Section>
-          <Section icon={Clapperboard} title={"Ảnh / Video AI & Stock"} subtitle="Ảnh AI, video AI, b-roll miễn phí">
+          <Section icon={Clapperboard} title="Ảnh / Video AI" subtitle="Key cho ảnh AI, video AI">
             <div className="grid grid-cols-1 gap-space-md lg:grid-cols-3">
-              {by("media").map((p) => (
-                <ProviderRow key={p.id} provider={p} compact={true} owner={ownerOf(p)} />
-              ))}
+              {by("media")
+                .filter((p) => p.provider !== "replicate" || p.hasKey)
+                .map((p) => (
+                  <ProviderRow key={p.id} provider={p} compact={true} owner={ownerOf(p)} />
+                ))}
             </div>
+            <button
+              type="button"
+              onClick={() => setParams({ tab: "video" }, { replace: true })}
+              className="flex items-center gap-1 self-start text-label-sm text-primary hover:underline"
+            >
+              {"Chọn dùng nguồn nào, theo thứ tự nào (gồm Google Flow) ở tab Tạo video "}
+              <ArrowRight size={12} />
+            </button>
           </Section>
           <Section icon={Music} title="Nhạc nền AI (tùy chọn)" subtitle="Nhạc có quyền dùng thương mại">
             <div className="grid grid-cols-1 gap-space-md lg:grid-cols-2">
@@ -293,35 +306,21 @@ function AiTab() {
 }
 
 function VideoTab() {
-  const { data: imageEngine } = useApiQuery("media.imageEngine");
-  const setImageEngine = useApiMutation("media.setImageEngine", ["media."]);
   return (
     <div className="grid grid-cols-1 items-start gap-space-md xl:grid-cols-[1fr_360px]">
-      <Section
-        icon={Video}
-        title="Google Flow"
-        subtitle={"Tạo video Veo & ảnh Nano Banana bằng tài khoản Google của bạn"}
-      >
-        <FlowCard />
-      </Section>
       <div className="flex flex-col gap-space-md">
-        <Card className="flex flex-col gap-space-sm p-space-md">
-          <h3 className="text-label-md text-on-surface">Nguồn ảnh AI (chế độ Bán tự động)</h3>
-          <Select
-            aria-label="Nguồn ảnh AI"
-            value={imageEngine ?? "auto"}
-            onChange={(e) => setImageEngine.mutate({ engine: e.target.value })}
-          >
-            <option value="auto">Tự động (Gemini → Fal)</option>
-            <option value="google_image">Ưu tiên Gemini (Nano Banana)</option>
-            <option value="fal">Ưu tiên Fal.ai Flux</option>
-          </Select>
-          <p className="text-label-sm text-outline">
-            Google Flow (nếu đã đăng nhập) luôn được thử trước. Lỗi thì tự chuyển sang video có sẵn.
-          </p>
-        </Card>
-        <MediaEngineCard />
+        <Section icon={Route} title={"Nguồn tạo ảnh & video"} subtitle="Google Flow · Veo · Seedance · Gemini · Fal">
+          <MediaSourcesCard />
+        </Section>
+        <Section
+          icon={Video}
+          title="Google Flow"
+          subtitle={"Tạo video Veo & ảnh Nano Banana bằng tài khoản Google của bạn"}
+        >
+          <FlowCard />
+        </Section>
       </div>
+      <MediaEngineCard />
     </div>
   );
 }

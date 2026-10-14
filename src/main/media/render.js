@@ -30,6 +30,7 @@ import { mediaDir } from "./paths";
 import { fontsDir, FfmpegError, runFfmpeg, hasAudioStream } from "./ffmpeg";
 import { encoderLabel, currentEncoder, encoderArgs } from "./encoders";
 import { veoSource, flowConcurrency } from "../flow/session";
+import { FlowTransientError } from "../flow/video";
 import {
   hasProvider,
   veoAvailable,
@@ -377,7 +378,7 @@ export async function renderProject(jobId, signal, report) {
         try {
           return await clip();
         } catch (err) {
-          if (signal.aborted || veoSource() !== "flow" || fatal(err)) throw err;
+          if (signal.aborted || veoSource() !== "flow" || fatal(err) || err instanceof FlowTransientError) throw err;
           report.scene?.(i, {
             status: "running",
             source: veoLabel,

@@ -14,6 +14,9 @@ import {
   acceptUploadConsent,
   tiles,
   FAIL_TEXT,
+  FlowTransientError,
+  flowFailure,
+  withFlowRetry,
   saveDiagnostics,
   isEditView,
   slotPages,
@@ -128,6 +131,17 @@ async function gridImages(page) {
 }
 
 export async function flowGenerateImage(o) {
+  const { attemptTimeoutMs, ...rest } = o;
+  return withFlowRetry(
+    "ảnh",
+    o.signal,
+    o.onStatus,
+    (signal) => generateImageOnce({ ...rest, signal }),
+    attemptTimeoutMs,
+  );
+}
+
+async function generateImageOnce(o) {
   const aspect = o.aspect === "9:16" || o.aspect === "1:1" || o.aspect === "3:4" ? o.aspect : "16:9";
   const refs = (o.refs ?? []).filter((f) => existsSync(f)).slice(0, 3);
   requireFlowFeature();
@@ -179,7 +193,7 @@ export async function flowGenerateImage(o) {
           continue;
         }
         const failed = (await tiles(p)).filter((x) => FAIL_TEXT.test(x.text));
-        if (failed.length > beforeFails) throw new Error(`Google Flow báo lỗi: ${failed[0].text.slice(0, 200)}`);
+        if (failed.length > beforeFails) throw flowFailure(failed[0].text);
         const grid = await gridImages(p);
         const fresh = grid.slice(0, 6).find((t) => !seen.has(t.id) && !/omnira-/i.test(t.title) && t.loaded && t.src);
         if (fresh) {
@@ -222,7 +236,8 @@ export async function flowGenerateImage(o) {
       throw new DOMException("Đã hủy", "AbortError");
     const dir = page && !page.isClosed() ? await saveDiagnostics(page, "image") : null;
     const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(dir ? `${msg} (ảnh chụp chẩn đoán: ${dir})` : msg);
+    const Err = err instanceof FlowTransientError ? FlowTransientError : Error;
+    throw new Err(dir ? `${msg} (ảnh chụp chẩn đoán: ${dir})` : msg);
   } finally {
     if (broken) {
       slotPages.delete(slot);

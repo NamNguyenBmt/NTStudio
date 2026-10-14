@@ -26,19 +26,12 @@ import { toast } from "../../components/ui/toast";
 import { mediaUrl } from "../../lib/media";
 import { formatRelative } from "../../lib/format";
 import { FLOW_CREDITS_LOW, formatCredits } from "../../components/shell/FlowCredits";
-
-const FLOW_MODEL_OPTIONS = [
-  { id: "Veo 3.1 - Fast", label: "Veo 3.1 Fast (cân bằng – khuyên dùng)" },
-  { id: "Veo 3.1 - Lite", label: "Veo 3.1 Lite (ít credit nhất)" },
-  { id: "Veo 3.1 - Quality", label: "Veo 3.1 Quality (đẹp nhất, nhiều credit)" },
-  { id: "Omni 1.1 Flash", label: "Omni 1.1 Flash (nhanh, clip 4–10 giây theo cảnh)" },
-];
+import { FLOW_MODEL_OPTIONS, FLOW_ACCOUNT_ID } from "./MediaSourcesCard";
 
 const INV = ["flow.", "film.gate", "studio.", "render."];
 
 export function FlowCard() {
   const { data: s } = useApiQuery("flow.status", void 0, { refetchInterval: 5e3 });
-  const setSource = useApiMutation("flow.setSource", INV);
   const setModel = useApiMutation("flow.setModel", INV);
   const setPrefs = useApiMutation("flow.setPrefs", INV);
   const openLogin = useApiMutation("flow.openLogin", INV);
@@ -50,7 +43,6 @@ export function FlowCard() {
   const openDiag = useApiMutation("flow.openDiagnostics");
   const [prompt, setPrompt] = useState("A calm ocean wave rolling onto a sandy beach at sunset, cinematic");
   const [result, setResult] = useState(null);
-  const flow = s?.source === "flow";
   const refreshCredits = useApiMutation("flow.refreshCredits", INV);
   const lowCredits = s?.credits != null && s.credits < FLOW_CREDITS_LOW;
   const readCredits = () =>
@@ -106,31 +98,20 @@ export function FlowCard() {
       },
     );
   return (
-    <div className="flex flex-col gap-space-sm rounded-xl border border-overlay/[0.08] bg-surface-container-lowest p-space-md">
-      <div className="flex flex-wrap items-center justify-between gap-space-sm">
-        <h3 className="flex items-center gap-space-sm text-label-md text-on-surface">
-          <Clapperboard size={15} className="text-secondary" />
-          {" Nguồn video Veo"}
-        </h3>
-        <div className="w-72">
-          <Select
-            aria-label="Nguồn video Veo"
-            value={s?.source ?? "api"}
-            disabled={!s || setSource.isPending}
-            onChange={(e) =>
-              setSource.mutate({ source: e.target.value }, { onError: (err) => toast.error(err.message) })
-            }
-          >
-            <option value="api">Veo API (key Gemini, tính phí)</option>
-            <option value="flow">Google Flow (tài khoản Google của bạn)</option>
-          </Select>
-        </div>
-      </div>
+    <div
+      id={FLOW_ACCOUNT_ID}
+      className="flex scroll-mt-space-md flex-col gap-space-sm rounded-xl border border-overlay/[0.08] bg-surface-container-lowest p-space-md"
+    >
+      <h3 className="flex items-center gap-space-sm text-label-md text-on-surface">
+        <Clapperboard size={15} className="text-secondary" />
+        {" Tài khoản Google Flow"}
+      </h3>
       <p className="text-body-sm text-on-surface-variant">
-        {"Đã có gói Google AI (Plus / Pro / Ultra) dùng Flow? Chọn "}
-        <b>Google Flow</b>: app mở Chrome trên máy bạn với một profile riêng, tự nhập prompt vào Flow, chờ Veo tạo xong
-        rồi tải file mp4 về thư viện video. Video trừ vào credit Flow của gói, app không tính phí. Áp dụng cho chế độ
-        "Full AI" ở Xưởng Video AI và model Veo ở Xưởng Phim.
+        {
+          "Đã có gói Google AI (Plus / Pro / Ultra)? Đăng nhập một lần: app mở Chrome trên máy bạn với một profile riêng, tự nhập prompt vào Flow, chờ tạo xong rồi tải file về. Video trừ vào credit Flow của gói, ảnh Nano Banana không tốn credit, app không tính phí. Chọn dùng Flow cho video / ảnh ở thẻ "
+        }
+        <b>{"Nguồn tạo ảnh & video"}</b>
+        {" phía trên."}
       </p>
       <p className="flex items-start gap-1.5 text-label-sm text-tertiary">
         <ShieldCheck size={13} className="mt-0.5 shrink-0" />
@@ -138,7 +119,7 @@ export function FlowCard() {
           " Bạn tự đăng nhập Google trong cửa sổ Chrome. Phiên đăng nhập chỉ nằm trong profile Chrome trên máy này: app không đọc mật khẩu và không gửi cookie hay video đi đâu."
         }
       </p>
-      {flow && s && (
+      {s && (
         <>
           <div className="flex flex-col gap-space-xs rounded-lg bg-surface-container p-space-sm text-label-sm">
             <div className="flex flex-wrap items-center justify-between gap-space-sm">
@@ -277,23 +258,6 @@ export function FlowCard() {
                 ? ", 720p; mỗi clip dài 4 / 6 / 8 / 10 giây theo thời lượng cảnh."
                 : "; Veo 3.1 trong Flow luôn tạo clip 8 giây."}
             </span>
-          </div>
-          <div className="flex items-center justify-between gap-space-sm rounded-lg border border-overlay/[0.06] p-space-sm">
-            <div>
-              <div className="text-label-md text-on-surface">
-                Ưu tiên Google Flow cho mọi ảnh (Nano Banana – 0 tín dụng)
-              </div>
-              <div className="text-label-sm text-outline">
-                Ảnh cảnh ở Xưởng Video AI, ảnh nhân vật / bối cảnh / khung hình ở Xưởng Phim và Series AI đều tạo qua
-                Flow trước (kèm ảnh tham chiếu); Flow lỗi thì tự dùng Gemini / Fal nếu có key.
-              </div>
-            </div>
-            <Switch
-              checked={s.images}
-              disabled={setPrefs.isPending}
-              onChange={(images) => setPrefs.mutate({ images })}
-              label="Ưu tiên Google Flow cho ảnh"
-            />
           </div>
           <div className="grid grid-cols-1 gap-space-sm md:grid-cols-2">
             <div className="flex items-center justify-between gap-space-sm rounded-lg border border-overlay/[0.06] p-space-sm">

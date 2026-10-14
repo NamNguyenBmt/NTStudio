@@ -1,6 +1,8 @@
-# Omnira Studio – mã nguồn dựng lại (v1.0.1)
+# Omnira Studio – mã nguồn dựng lại (v1.0.2)
 
-Mã nguồn được dựng lại từ bản phát hành **Omnira Studio 1.0.1** (`resources/app.asar`, build bằng electron-vite).
+Mã nguồn được dựng lại từ bản phát hành **Omnira Studio 1.0.2** (`app.asar` trong `Omnira Studio Setup 1.0.2.exe`, build bằng electron-vite).
+Lịch sử git: tag `v1.0.1` là bản dựng lại từ 1.0.1, commit kế tiếp (tag `v1.0.2`) là thay đổi của 1.0.2
+(`git diff v1.0.1 v1.0.2` để xem 1.0.2 đổi gì: cơ chế thử lại Google Flow khi lỗi tạm thời, thẻ "Nguồn tạo ảnh & video" trong Cài đặt).
 Bản build lại từ thư mục này cho ra ứng dụng chạy giống bản gốc (chi tiết kiểm chứng ở cuối file).
 
 ## Chạy & đóng gói
@@ -9,7 +11,7 @@ Bản build lại từ thư mục này cho ra ứng dụng chạy giống bản 
 npm install            # postinstall tự build better-sqlite3 cho Electron
 npm run dev            # chạy dev (electron-vite, hot reload renderer)
 npm run build          # build ra out/
-npm run dist           # build + tạo bộ cài NSIS: dist/Omnira Studio Setup 1.0.1.exe
+npm run dist           # build + tạo bộ cài NSIS: dist/Omnira Studio Setup 1.0.2.exe
 ```
 
 Nếu `npm install` chạy với `--ignore-scripts` thì cần chạy thêm:
@@ -50,13 +52,13 @@ tools/reconstruct/  công cụ đã dùng để tách bundle → mã nguồn (kh
 
 ## Kiểm chứng
 
-- Build lại bằng `electron-vite build` rồi so từng câu lệnh cấp cao nhất với bundle 1.0.1 (bỏ qua khác biệt tên biến):
-  main 1283/1284, preload 6/6, renderer 2658/2659. Câu lệnh lệch ở main là do rollup bản mới tự bỏ một tham số không dùng tới;
+- Build lại bằng `electron-vite build` rồi so từng câu lệnh cấp cao nhất với bundle gốc (bỏ qua khác biệt tên biến):
+  1.0.2: main 1293/1294, preload 6/6, renderer 2665/2666 (1.0.1: 1283/1284, 6/6, 2658/2659). Câu lệnh lệch ở main là do rollup bản mới tự bỏ một tham số không dùng tới;
   câu lệch ở renderer chỉ khác tên biến trong template string.
 - Thứ tự module trong bundle không trùng hoàn toàn: source gốc còn có các `import` mà phần code dùng chúng đã bị tree-shake,
   nên không còn dấu vết trong bản build. Việc này không đổi hành vi.
-- CSS: trùng khớp từng rule với `index-6I-pUKLo.css` (chỉ khác chỗ xuống dòng). Tên file font băm trùng với bản gốc.
-- Chạy thật bằng Electron 33.4.11 (thư mục dữ liệu riêng): DOM màn hình khởi động của bản dựng lại **giống hệt** bản gốc 1.0.1,
+- CSS: trùng khớp từng rule với CSS gốc của cả hai bản (chỉ khác chỗ xuống dòng). Tên file font băm trùng với bản gốc.
+- Chạy thật bằng Electron 33.4.11 (thư mục dữ liệu riêng): DOM màn hình khởi động của bản dựng lại **giống hệt** bản gốc (đã thử cả 1.0.1 và 1.0.2),
   không có lỗi console.
 - Các màn hình sau đăng nhập chưa được kiểm thử bằng chạy thật (cần tài khoản Omnira và license).
 
@@ -65,4 +67,6 @@ tools/reconstruct/  công cụ đã dùng để tách bundle → mã nguồn (kh
 `run.js` (tách 3 bundle theo `main-manifest.txt` / `r-manifest.txt`) → `merge.js` (gộp `src/shared`) → `fmt.mjs` (prettier) →
 `finalize.js` (chép vào project). `classify.js` + `vendormap.js` tách code app khỏi thư viện trong bundle renderer;
 `compare.js` so bundle build lại với bundle gốc; `shoot.js` chạy app bằng playwright và chụp màn hình/DOM để so sánh.
-Một số script còn đường dẫn tuyệt đối của máy dựng, cần sửa trước khi dùng lại (vd. để dựng bản 1.0.2).
+`input/` + `main-manifest.txt`/`r-manifest.txt` là dữ liệu của 1.0.1; `1.0.2/` + `run-1.0.2.js` là của 1.0.2.
+Với bản mới: giải nén `app.asar` từ bộ cài (7-Zip mở được file NSIS), `remap.js` chuyển manifest cũ sang vị trí mới và liệt kê
+các khai báo mới cần xếp file, `depver.js` so phiên bản thư viện đóng gói. Một số script còn đường dẫn tuyệt đối của máy dựng.

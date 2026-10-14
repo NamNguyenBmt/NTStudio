@@ -20,7 +20,7 @@ const special = {
   CSS: { from: "@dnd-kit/utilities", name: "CSS" },
 };
 const sortable = new Set(["SortableContext", "arrayMove", "sortableKeyboardCoordinates", "useSortable", "verticalListSortingStrategy", "rectSortingStrategy", "horizontalListSortingStrategy"]);
-const regions = [
+const regions = process.env.REGIONS ? JSON.parse(process.env.REGIONS) : [
   [1, 3627, "@tanstack/react-query"],
   [10361, 11896, "react-router-dom"],
   [11897, 15151, "lucide-react"],

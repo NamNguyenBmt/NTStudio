@@ -259,6 +259,52 @@ async function hoverVideoSrc(page, id) {
 
 export const FAIL_TEXT =
   /generation failed|failed to generate|couldn'?t generate|something went wrong|violat|policy|unsafe|out of credits|not enough credits|không thể tạo|tạo không thành công|không thành công|thất bại|đã xảy ra lỗi|vi phạm|chính sách|không đủ tín dụng|hết tín dụng/i;
+const TRANSIENT_TEXT =
+  /hoạt động bất thường|unusual activity|chưa bị tính phí|(?:not|n'?t) been charged|something went wrong|đã xảy ra lỗi|try again|thử lại/i;
+const FATAL_TEXT =
+  /violat|policy|unsafe|out of credits|not enough credits|vi phạm|chính sách|không đủ tín dụng|hết tín dụng/i;
+export class FlowTransientError extends Error {}
+
+export function flowFailure(text) {
+  const msg = `Google Flow báo lỗi: ${text.slice(0, 200)}`;
+  return TRANSIENT_TEXT.test(text) && !FATAL_TEXT.test(text) ? new FlowTransientError(msg) : new Error(msg);
+}
+
+const FLOW_RETRY_WAIT_MS = [2e4, 6e4];
+let cooldownUntil = 0;
+
+async function waitCooldown(signal, onStatus) {
+  while (Date.now() < cooldownUntil) {
+    if (signal.aborted) throw new DOMException("Đã hủy", "AbortError");
+    onStatus?.(`Google Flow từ chối tạm thời – tạo lại sau ${Math.ceil((cooldownUntil - Date.now()) / 1e3)}s…`, 0);
+    await sleep(Math.min(1e3, Math.max(50, cooldownUntil - Date.now())));
+  }
+}
+
+export async function withFlowRetry(what, signal, onStatus, run, attemptTimeoutMs) {
+  for (let i = 0; ; i++) {
+    await waitCooldown(signal, onStatus);
+    const attempt = attemptTimeoutMs ? AbortSignal.any([signal, AbortSignal.timeout(attemptTimeoutMs)]) : signal;
+    try {
+      return await run(attempt);
+    } catch (err) {
+      if (signal.aborted) throw err;
+      if (attempt.aborted)
+        throw new Error(`Google Flow tạo ${what} quá lâu (>${Math.round((attemptTimeoutMs ?? 0) / 1e3)}s)`);
+      if (!(err instanceof FlowTransientError)) throw err;
+      if (i >= FLOW_RETRY_WAIT_MS.length)
+        throw new FlowTransientError(
+          `${err.message} – đã tạo lại ${i} lần vẫn lỗi (Google có thể đang tạm giới hạn tài khoản; thử lại sau ít phút hoặc giảm số luồng Flow)`,
+        );
+      const wait = FLOW_RETRY_WAIT_MS[i];
+      cooldownUntil = Math.max(cooldownUntil, Date.now() + wait);
+      console.warn(
+        `[flow] tạo ${what}: Flow từ chối tạm thời → tạo lại sau ${wait / 1e3}s (lần ${i + 2}/${FLOW_RETRY_WAIT_MS.length + 1})`,
+        err.message.slice(0, 160),
+      );
+    }
+  }
+}
 
 export async function saveDiagnostics(page, label) {
   try {
@@ -453,11 +499,16 @@ export async function acquire(signal) {
   };
 }
 
+export async function flowGenerate(o) {
+  if (o.dryRun) return generateVideoOnce(o);
+  return withFlowRetry("video", o.signal, o.onStatus, (signal) => generateVideoOnce({ ...o, signal }));
+}
+
 export function requireFlowFeature() {
   if (!hasFeature("FLOW")) throw new ApiError("FEATURE", featureLockedMessage("FLOW"));
 }
 
-export async function flowGenerate(o) {
+async function generateVideoOnce(o) {
   requireFlowFeature();
   const refs = o.start ? [] : (o.refs ?? []).filter((f) => existsSync(f)).slice(0, 3);
   const input = o.start ? "frames" : refs.length ? "ingredients" : "text";
@@ -535,7 +586,7 @@ export async function flowGenerate(o) {
         known(all.slice(TOP_TILES).filter((t) => !t.key.startsWith("pending:")));
         const fresh = all.slice(0, TOP_TILES).filter(isNew);
         const failed = fresh.find((t) => FAIL_TEXT.test(t.text));
-        if (failed) throw new Error(`Google Flow báo lỗi: ${failed.text.slice(0, 200)}`);
+        if (failed) throw flowFailure(failed.text);
         if (fresh.some((t) => !t.done)) started = true;
         if (started) {
           const withVideo = fresh.find((t) => t.done && t.video && !beforeVideos.has(t.video));
@@ -566,7 +617,8 @@ export async function flowGenerate(o) {
       throw new DOMException("Đã hủy", "AbortError");
     const dir = page && !page.isClosed() ? await saveDiagnostics(page, "generate") : null;
     const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(dir ? `${msg} (ảnh chụp chẩn đoán: ${dir})` : msg);
+    const Err = err instanceof FlowTransientError ? FlowTransientError : Error;
+    throw new Err(dir ? `${msg} (ảnh chụp chẩn đoán: ${dir})` : msg);
   } finally {
     if (broken) {
       slotPages.delete(slot);

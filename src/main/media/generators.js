@@ -95,7 +95,8 @@ async function flowImage(prompt, signal, aspect = "9:16", refs = []) {
     aspect,
     refs: refs.slice(0, 3),
     destBase: flowImageCacheBase(prompt, aspect, refs),
-    signal: AbortSignal.any([signal, AbortSignal.timeout(1e5)]),
+    signal,
+    attemptTimeoutMs: 1e5,
   });
   return { file, kind: "image", source: "nano_banana", credit: "AI: Nano Banana (Google Flow)" };
 }
