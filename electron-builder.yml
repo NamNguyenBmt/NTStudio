@@ -30,7 +30,6 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   shortcutName: Omnira Studio
-  uninstallDisplayName: Omnira Studio
 publish:
   provider: github
   owner: buidinhdat

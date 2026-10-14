@@ -2,7 +2,8 @@
 
 Mã nguồn được dựng lại từ bản phát hành **Omnira Studio 1.0.2** (`app.asar` trong `Omnira Studio Setup 1.0.2.exe`, build bằng electron-vite).
 `npm run build` từ thư mục này cho ra thư mục `out/` **trùng từng byte** với `out/` trong bản phát hành 1.0.2
-(main, preload, renderer JS, CSS, `index.html`, font – kể cả tên file có hash).
+(main, preload, renderer JS, CSS, `index.html`, font – kể cả tên file có hash), và `node tools/dist-exact.js` cho ra
+`Omnira Studio Setup 1.0.2.exe` **trùng từng byte** với bộ cài phát hành (SHA-256 `5feb2a21…58d66e6`).
 
 Lịch sử git: tag `v1.0.1` (dựng từ bản 1.0.1), `v1.0.2` (thay đổi của 1.0.2: thử lại Google Flow khi lỗi tạm thời,
 thẻ "Nguồn tạo ảnh & video" trong Cài đặt), các commit sau đó tinh chỉnh để bản build trùng byte.
@@ -14,6 +15,7 @@ npm ci                 # cài đúng theo package-lock.json; postinstall tự bu
 npm run dev            # chạy dev (electron-vite, hot reload renderer)
 npm run build          # build ra out/
 npm run dist           # build + tạo bộ cài NSIS: dist/Omnira Studio Setup 1.0.2.exe
+node tools/dist-exact.js   # (sau npm run build) tạo bộ cài trùng từng byte với bản phát hành 1.0.2
 npm run verify         # build + harness so giao diện bản gốc / bản dựng lại (tools/verify)
 npm run db:generate    # drizzle-kit: sinh migration từ src/main/db/schema.js
 ```
@@ -40,6 +42,15 @@ Cách xử lý: bật Developer Mode, hoặc giải nén `winCodeSign-2.6.0.7z` 
 - Các dòng `import "./x";` (side-effect) trong một số file giữ đúng **thứ tự khởi tạo module** như bản gốc: source gốc
   có import tới những đoạn code đã bị tree-shake (không còn trong bản build), nên thứ tự được khôi phục bằng các import này.
 - `tailwind.config.js` giữ `safelist: ["ease-out"]` và giá trị viết đúng như bản gốc (chữ hoa trong mã màu, `rgba(` không dấu cách).
+- `electron-builder.yml` **không** đặt `uninstallDisplayName`: bản gốc dùng mặc định "Omnira Studio 1.0.2" (tên hiện trong
+  Apps & features).
+- `npm run dist` cho bộ cài chạy được nhưng không trùng byte. `tools/dist-exact.js` chạy electron-builder với hai chỉnh sửa
+  lúc chạy (không sửa `node_modules`):
+  - electron-builder 25.1.8 ghi `messages.yml` và `assistedMessages.yml` song song rồi include file nào xong trước →
+    thứ tự bảng ngôn ngữ trong bộ cài (header, dialog của stub, uninstaller) thay đổi giữa các lần build. Bản gốc là
+    `assistedMessages.yml` trước; script ép đúng thứ tự đó.
+  - NSIS ghi mtime của từng file vào header. Hai file sinh ra lúc build (`app-64.7z`, uninstaller) được đặt mtime về
+    thời điểm build gốc: 2026-10-14 05:39:40 và 05:39:44 UTC. Khi phát hành bản mới, bỏ/cập nhật `ORIGINAL_MTIMES`.
 
 ## Cấu trúc
 
@@ -71,6 +82,8 @@ tools/reconstruct/  công cụ đã dùng để tách bundle → mã nguồn (kh
 ## Kiểm chứng
 
 - `out/` build từ nguồn so với `out/` trong `app.asar` 1.0.2: **trùng 100% từng byte** (`diff -r`).
+- `app.asar` và toàn bộ file cài ra máy trùng bản gốc; `tools/dist-exact.js` cho `Omnira Studio Setup 1.0.2.exe` trùng
+  từng byte (`cmp`), kể cả khi clone sạch → `npm ci` → `npm run build` → `node tools/dist-exact.js`.
 - Harness `tools/verify` (backend thật của bản dựng lại + dữ liệu mẫu, renderer gốc và renderer dựng lại chạy song song):
   21/21 màn hình và 34/34 thao tác (mở hộp thoại, đổi tab, bộ lọc) có DOM giống hệt, không lỗi console.
 - Chạy thật bằng Electron 33.4.11 (thư mục dữ liệu riêng): màn hình khởi động giống hệt bản gốc; chế độ dev chạy bình thường.
