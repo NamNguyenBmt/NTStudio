@@ -32,5 +32,5 @@ nsis:
   shortcutName: NT Studio
 publish:
   provider: github
-  owner: buidinhdat
-  repo: OmniPageStudio
+  owner: NamNguyenBmt
+  repo: NTStudio

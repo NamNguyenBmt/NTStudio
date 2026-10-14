@@ -6,7 +6,10 @@ import { Progress } from "../../components/ui/Progress";
 
 export function OmniraAiCard() {
   const { data } = useApiQuery("ai.omnira", void 0, { refetchInterval: 6e4 });
+  const { data: lic } = useApiQuery("license.state", void 0, { staleTime: 6e4 });
   const q = data?.quota;
+  // Bản không server: không có AI dùng chung của cloud, chỉ dùng key riêng bên dưới
+  if (lic?.plan === "local") return null;
   return <div className="flex flex-col gap-space-sm rounded-lg border border-secondary/30 bg-secondary-container/20 p-space-md">
     <div className="flex items-center gap-space-sm">
       <Sparkles size={16} className="text-secondary" />

@@ -1,5 +1,5 @@
 import { currentUser } from "../../paths";
-import { CloudError, cloud, readCloudSession } from "../../cloud/client";
+import { CLOUD_ENABLED, CloudError, cloud, readCloudSession } from "../../cloud/client";
 import { AiError } from "../providers";
 import "./misc";
 import "./openai";
@@ -7,6 +7,7 @@ import "./openai";
 export const OMNIRA_AI_LABEL = "AI NT";
 
 function token() {
+  if (!CLOUD_ENABLED) throw new AiError("no_provider", "Chưa có AI văn bản – vào Cài đặt → AI nhập API key của một nhà cung cấp (OpenAI, Gemini, Claude…)");
   const uid = currentUser();
   const t = uid ? readCloudSession(uid)?.customerToken : null;
   if (!t) throw new AiError("no_provider", "Chưa đăng nhập NT – không dùng được AI NT");
@@ -54,6 +55,7 @@ export async function omniraChat(req) {
 }
 
 export async function omniraQuota() {
+  if (!CLOUD_ENABLED) return null;
   try {
     return await cloud("/api/client/v1/ai/quota", { token: token(), timeoutMs: 1e4 });
   } catch {

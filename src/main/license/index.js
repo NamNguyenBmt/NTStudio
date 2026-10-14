@@ -4,7 +4,7 @@ import { createPublicKey, verify } from "node:crypto";
 import { sql, inArray } from "drizzle-orm";
 import { channels } from "../db/schema";
 import { getDb } from "../db/index";
-import { CloudError, cloud, deviceId, readCloudSession, patchCloudSession } from "../cloud/client";
+import { CLOUD_ENABLED, CloudError, cloud, deviceId, readCloudSession, patchCloudSession } from "../cloud/client";
 import { bindCloudSession, syncAppConfig } from "../cloud/app-config";
 import { FEATURE_LABEL, normalizeFeatures } from "../../shared/features";
 
@@ -21,6 +21,19 @@ CROlvxl+8TnaGHdITwnW1g5nacIe9mVFVGNxYsKedxVGOsxugThPi8AfphBF4U3K
 -----END PUBLIC KEY-----`;
 
 const HEARTBEAT_MS = 6 * 36e5;
+
+// Chế độ không server: không có license từ cloud → dùng đủ tính năng, không giới hạn kênh / máy
+const LOCAL_CLAIMS = {
+  typ: "license",
+  plan: "local",
+  planName: "Bản không server",
+  trial: false,
+  features: Object.keys(FEATURE_LABEL),
+  maxChannels: null,
+  flowThreads: null,
+  maxDevices: null,
+  exp: null
+};
 let publicKey = null;
 const key = () => publicKey ??= createPublicKey(process.env.OMNI_LICENSE_PUBLIC_KEY ?? LICENSE_PUBLIC_KEY);
 const b64 = (s) => Buffer.from(s, "base64url");
@@ -110,7 +123,7 @@ export function licenseView() {
     planName: c?.planName ?? null,
     trial: c?.trial ?? false,
     entitlementEndsAt: c?.entitlementEndsAt ? new Date(c.entitlementEndsAt * 1e3) : null,
-    tokenExpiresAt: c ? new Date(c.exp * 1e3) : null,
+    tokenExpiresAt: c?.exp ? new Date(c.exp * 1e3) : null,
     maxDevices: c?.maxDevices ?? null,
     maxChannels: c?.maxChannels ?? null,
     flowThreads: c?.flowThreads ?? null,
@@ -174,6 +187,7 @@ function accept(token) {
 }
 
 export function activateLicense() {
+  if (!CLOUD_ENABLED) return Promise.resolve(licenseView());
   return serial(activateNow);
 }
 
@@ -193,6 +207,7 @@ async function activateNow() {
 }
 
 export function refreshLicense() {
+  if (!CLOUD_ENABLED) return Promise.resolve(licenseView());
   inflight ??= serial(async () => {
     try {
       if (!state) return licenseView();
@@ -219,6 +234,12 @@ export function refreshLicense() {
 
 export function startLicense(localUserId) {
   stopLicense();
+  if (!CLOUD_ENABLED) {
+    state = { localUserId, claims: LOCAL_CLAIMS, status: "active", message: null, needRelogin: false, lastCheckedAt: Date.now(), lastOnlineAt: null };
+    listeners.forEach((l) => l(true));
+    stateListeners.forEach((l) => l());
+    return;
+  }
   const claims = verifyLicenseToken(readCloudSession(localUserId)?.licenseToken);
   state = {
     localUserId,

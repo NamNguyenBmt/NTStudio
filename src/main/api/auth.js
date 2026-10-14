@@ -1,7 +1,7 @@
 import { toAuthUser, activeUser, hasLegacyData, adoptLegacyData, openSession, closeSession } from "../auth/session";
 import { ApiError } from "../errors";
 import { vaultAvailable, writePortableKey, recoverVaultOnThisMachine } from "../vault";
-import { CLOUD_URL, CloudError, cloud, readCloudSession, writeCloudSession, clearCloudSession } from "../cloud/client";
+import { CLOUD_ENABLED, CLOUD_URL, CloudError, cloud, readCloudSession, writeCloudSession, clearCloudSession } from "../cloud/client";
 import { verifyLicenseToken, licenseView, activateLicense, refreshLicense, deactivateLicense } from "../license/index";
 import { readStore, writeStore, findUser, updateUser, hashPassword, verifyPassword, createUser, rememberSession, forgetSession, lockRemainingSec, recordFailure, clearFailures } from "../auth/store";
 
@@ -92,6 +92,37 @@ async function startCloud(auth, password, remember, adoptLegacy = false) {
   return activeUser();
 }
 
+// Chế độ không server: tài khoản chỉ nằm trên máy (mật khẩu băm trong auth/users.json)
+const NO_SERVER_MSG = "Bản không server chưa hỗ trợ việc này (cần NT Cloud để gửi email)";
+
+async function registerLocal({ email, displayName, password, remember, adoptLegacy }) {
+  if (findUser(email)) throw new ApiError("CONFLICT", "Email này đã có tài khoản trên máy – hãy đăng nhập");
+  const user = await createUser({ email, displayName, password, provider: "local" });
+  if (adoptLegacy && hasLegacyData()) {
+    try {
+      adoptLegacyData(user.id);
+    } catch (err) {
+      console.error("[auth] chuyển dữ liệu cũ lỗi", err);
+      throw new ApiError("INTERNAL", `Đã tạo tài khoản nhưng không chuyển được dữ liệu cũ: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  start(user, remember, password);
+  return activeUser();
+}
+
+async function loginLocal({ email, password, remember }) {
+  const user = findUser(email);
+  dummyHash ??= hashPassword("omnipage-dummy-password");
+  const ok = user ? await verifyPassword(password, user.passwordHash) : (await verifyPassword(password, await dummyHash), false);
+  if (!user || !ok) {
+    recordFailure(email);
+    throw new ApiError("AUTH", "Email hoặc mật khẩu không đúng");
+  }
+  clearFailures(email);
+  start(user, remember, password);
+  return activeUser();
+}
+
 const cloudToken = () => {
   const u = activeUser();
   const t = u ? readCloudSession(u.id)?.customerToken : null;
@@ -110,10 +141,13 @@ export const authHandlers = {
       lastEmail: readStore().lastEmail ?? null,
       vaultAvailable: vaultAvailable(),
       license: u ? licenseView() : null,
-      cloudUrl: CLOUD_URL
+      cloudUrl: CLOUD_URL,
+      cloudEnabled: CLOUD_ENABLED
     };
   },
   "auth.register": async ({ email, displayName, password, phone, referralCode, remember, adoptLegacy }) => {
+    // Không server: tạo tài khoản ngay trên máy, không cần mã xác thực email
+    if (!CLOUD_ENABLED) return { user: toAuthUser(await registerLocal({ email, displayName, password, remember, adoptLegacy })) };
     let r;
     try {
       r = await cloud("/api/client/v1/auth/register", {
@@ -127,6 +161,7 @@ export const authHandlers = {
     return toPending(r);
   },
   "auth.registerResend": async ({ email }) => {
+    if (!CLOUD_ENABLED) throw new ApiError("VALIDATION", NO_SERVER_MSG);
     try {
       return toPending(await cloud("/api/client/v1/auth/register/resend", { method: "POST", body: { email } }));
     } catch (e) {
@@ -148,6 +183,7 @@ export const authHandlers = {
     return toAuthUser(await startCloud(auth, p.password, p.remember, p.adoptLegacy));
   },
   "auth.forgotPassword": async ({ email }) => {
+    if (!CLOUD_ENABLED) throw new ApiError("VALIDATION", NO_SERVER_MSG);
     try {
       return toPending(await cloud("/api/client/v1/auth/password/forgot", { method: "POST", body: { email } }));
     } catch (e) {
@@ -155,6 +191,7 @@ export const authHandlers = {
     }
   },
   "auth.resetPassword": async ({ email, code, newPassword, remember }) => {
+    if (!CLOUD_ENABLED) throw new ApiError("VALIDATION", NO_SERVER_MSG);
     let auth;
     try {
       auth = await cloud("/api/client/v1/auth/password/reset", { method: "POST", body: { email, code, newPassword } });
@@ -167,6 +204,7 @@ export const authHandlers = {
   "auth.login": async ({ email, password, remember }) => {
     const wait = lockRemainingSec(email);
     if (wait) throw new ApiError("AUTH", `Sai mật khẩu quá nhiều lần – thử lại sau ${wait} giây`);
+    if (!CLOUD_ENABLED) return toAuthUser(await loginLocal({ email, password, remember }));
     let auth;
     try {
       auth = await cloud("/api/client/v1/auth/login", { method: "POST", body: { email, password } });
@@ -203,10 +241,14 @@ export const authHandlers = {
   "auth.changePassword": async ({ currentPassword, newPassword }) => {
     const u = activeUser();
     if (!u) throw new ApiError("AUTH", "Chưa đăng nhập");
-    try {
-      await cloud("/api/client/v1/me/password", { method: "POST", body: { currentPassword, newPassword }, token: cloudToken() });
-    } catch (e) {
-      throw toApiError(e);
+    if (!CLOUD_ENABLED) {
+      if (!await verifyPassword(currentPassword, u.passwordHash)) throw new ApiError("VALIDATION", "Mật khẩu hiện tại không đúng");
+    } else {
+      try {
+        await cloud("/api/client/v1/me/password", { method: "POST", body: { currentPassword, newPassword }, token: cloudToken() });
+      } catch (e) {
+        throw toApiError(e);
+      }
     }
     const remembered = !!u.rememberTokenHash;
     updateUser(u.id, { passwordHash: await hashPassword(newPassword), rememberTokenHash: null, rememberExpiresAt: null });
@@ -221,17 +263,20 @@ export const authHandlers = {
   "auth.updateProfile": async ({ displayName }) => {
     const u = activeUser();
     if (!u) throw new ApiError("AUTH", "Chưa đăng nhập");
-    try {
-      const token = cloudToken();
-      const me = await cloud("/api/client/v1/me", { token });
-      await cloud("/api/client/v1/me", { method: "PUT", body: { fullName: displayName.trim(), phone: me.customer.phone, company: me.customer.company }, token });
-    } catch (e) {
-      throw toApiError(e);
+    if (CLOUD_ENABLED) {
+      try {
+        const token = cloudToken();
+        const me = await cloud("/api/client/v1/me", { token });
+        await cloud("/api/client/v1/me", { method: "PUT", body: { fullName: displayName.trim(), phone: me.customer.phone, company: me.customer.company }, token });
+      } catch (e) {
+        throw toApiError(e);
+      }
     }
     updateUser(u.id, { displayName: displayName.trim() });
     return toAuthUser(readStore().users.find((x) => x.id === u.id));
   },
   "auth.checkReferral": async ({ code }) => {
+    if (!CLOUD_ENABLED) return { valid: false, name: null };
     try {
       const r = await cloud(`/api/public/referral/${encodeURIComponent(code)}`, { timeoutMs: 8e3 });
       return { valid: r.valid, name: r.name ?? null };

@@ -26,6 +26,8 @@ export function LoginPage({ state, onAuthed }) {
   const [verify, setVerify] = useState(null);
   const [forgot, setForgot] = useState(false);
   const register = mode === "register";
+  // Bản không server: tài khoản chỉ lưu trên máy, đăng ký không cần mã email, không có quên mật khẩu / mã giới thiệu
+  const local = state.cloudEnabled === false;
   const mismatch = register && confirm.length > 0 && confirm !== password;
   const canSubmit = email.trim() && password && (!register || displayName.trim() && password.length >= 8 && confirm === password && !(referrer && !referrer.valid));
   const submit = async () => {
@@ -43,6 +45,7 @@ export function LoginPage({ state, onAuthed }) {
           remember,
           adoptLegacy: state.legacyData && adoptLegacy
         });
+        if (pending2.user) return onAuthed(pending2.user);
         setVerify(pending2);
         setPending(false);
         return;
@@ -94,11 +97,11 @@ export function LoginPage({ state, onAuthed }) {
             </li>
             <li className="flex gap-space-sm">
               <Cloud size={16} className="mt-0.5 shrink-0 text-tertiary" />
-              Đăng nhập bằng tài khoản NT – dùng trên các máy theo gói, mất mạng vẫn chạy được vài ngày.
+              {local ? "Chạy hoàn toàn trên máy – không cần mạng để đăng nhập." : "Đăng nhập bằng tài khoản NT – dùng trên các máy theo gói, mất mạng vẫn chạy được vài ngày."}
             </li>
             <li className="flex gap-space-sm">
               <BadgeCheck size={16} className="mt-0.5 shrink-0 text-tertiary" />
-              Tài khoản mới được dùng thử miễn phí ngay sau khi đăng ký.
+              {local ? "Mở sẵn đầy đủ tính năng, không giới hạn số kênh." : "Tài khoản mới được dùng thử miễn phí ngay sau khi đăng ký."}
             </li>
           </ul>
         </section>
@@ -106,7 +109,7 @@ export function LoginPage({ state, onAuthed }) {
           <div>
             <h1 className="text-headline-md text-on-surface">{register ? "Tạo tài khoản NT" : "Đăng nhập NT"}</h1>
             <p className="text-body-sm text-on-surface-variant">
-              {register ? "Dùng thử miễn phí ngay – dữ liệu (kênh, video, lịch đăng) lưu trên máy của bạn." : "Đăng nhập bằng tài khoản NT của bạn."}
+              {register ? local ? "Tài khoản lưu trên máy này – dữ liệu (kênh, video, lịch đăng) cũng nằm trên máy." : "Dùng thử miễn phí ngay – dữ liệu (kênh, video, lịch đăng) lưu trên máy của bạn." : "Đăng nhập bằng tài khoản NT của bạn."}
             </p>
           </div>
           <SegmentedControl
@@ -149,7 +152,7 @@ export function LoginPage({ state, onAuthed }) {
             <Field label="Mật khẩu" required={true} hint={register ? "Tối thiểu 8 ký tự" : void 0}>
               {(id) => <PasswordInput id={id} value={password} onChange={setPassword} autoComplete={register ? "new-password" : "current-password"} />}
             </Field>
-            {!register && <button
+            {!register && !local && <button
               type="button"
               onClick={() => (setForgot(true), setError(null))}
               className="-mt-space-sm self-end text-label-md text-primary hover:underline"
@@ -159,7 +162,7 @@ export function LoginPage({ state, onAuthed }) {
             {register && <Field label="Nhập lại mật khẩu" required={true} error={mismatch ? "Mật khẩu không khớp" : null}>
               {(id) => <PasswordInput id={id} value={confirm} onChange={setConfirm} autoComplete="new-password" />}
             </Field>}
-            {register && <div className="grid grid-cols-2 gap-space-sm">
+            {register && !local && <div className="grid grid-cols-2 gap-space-sm">
               <Field label="Số điện thoại">
                 {(id) => <Input id={id} value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} autoComplete="tel" />}
               </Field>
@@ -190,10 +193,10 @@ export function LoginPage({ state, onAuthed }) {
             {error && <p className="rounded-lg bg-danger/10 p-space-sm text-body-sm text-error">{error}</p>}
             <Button variant="primary" type="submit" disabled={!canSubmit || pending} className="h-10">
               {pending ? <LoaderCircle size={15} className="animate-spin" /> : register ? <UserPlus size={15} /> : <LogIn size={15} />}
-              {pending ? register ? "Đang gửi mã xác thực…" : "Đang đăng nhập…" : register ? "Tiếp tục – gửi mã xác thực email" : "Đăng nhập"}
+              {pending ? register ? local ? "Đang tạo tài khoản…" : "Đang gửi mã xác thực…" : "Đang đăng nhập…" : register ? local ? "Tạo tài khoản" : "Tiếp tục – gửi mã xác thực email" : "Đăng nhập"}
             </Button>
           </form>
-          {state.hasUsers && <p className="text-label-sm text-on-surface-variant">
+          {state.hasUsers && !local && <p className="text-label-sm text-on-surface-variant">
             {"Đã dùng app trên máy này từ trước? Đăng ký / đăng nhập NT bằng "}
             <b>cùng email và mật khẩu cũ</b>
             {" để giữ nguyên dữ liệu."}

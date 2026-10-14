@@ -65,7 +65,7 @@ export function AccountMenu() {
       <div className="my-space-xs h-px bg-outline-variant/30" />
       <div className="px-space-sm pb-space-xs text-label-sm uppercase tracking-wider text-outline">Giao diện</div>
       <div className="px-space-xs pb-space-sm"><ThemePicker /></div>
-      <button
+      {lic?.plan !== "local" && <button
         type="button"
         onClick={() => {
           setOpen(false);
@@ -75,7 +75,7 @@ export function AccountMenu() {
       >
         <BadgeCheck size={14} />
         {" Gói & thanh toán"}
-      </button>
+      </button>}
       <button
         type="button"
         onClick={() => {

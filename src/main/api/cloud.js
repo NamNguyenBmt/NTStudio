@@ -1,6 +1,6 @@
 import { app, shell } from "electron";
 import { ApiError } from "../errors";
-import { CloudError, cloud, deviceId, readCloudSession } from "../cloud/client";
+import { CLOUD_ENABLED, CloudError, cloud, deviceId, readCloudSession } from "../cloud/client";
 import { licenseView, activateLicense, refreshLicense } from "../license/index";
 import { quotaState, setQuotaSelection } from "../quota";
 import { activeUser } from "../auth/session";
@@ -19,6 +19,7 @@ const fail = (e) => {
 };
 
 async function devices() {
+  if (!CLOUD_ENABLED) return [];
   const me = await cloud("/api/client/v1/me", { token: token() });
   const mine = deviceId();
   return me.devices.filter((d) => !d.revokedAt).map((d) => ({ ...d, current: d.deviceId === mine })).sort((a, b) => Number(b.current) - Number(a.current) || b.lastSeenAt.localeCompare(a.lastSeenAt));
@@ -50,6 +51,7 @@ export const cloudHandlers = {
     }
   },
   "license.removeDevice": async ({ id }) => {
+    if (!CLOUD_ENABLED) return [];
     try {
       await cloud(`/api/client/v1/devices/${encodeURIComponent(id)}`, { method: "DELETE", token: token() });
       if (!licenseView().usable) await activateLicense();
@@ -59,6 +61,7 @@ export const cloudHandlers = {
     }
   },
   "billing.plans": async () => {
+    if (!CLOUD_ENABLED) return [];
     try {
       return await cloud("/api/public/plans");
     } catch (e) {
@@ -66,6 +69,7 @@ export const cloudHandlers = {
     }
   },
   "billing.createOrder": async ({ planCode, gateway }) => {
+    if (!CLOUD_ENABLED) throw new ApiError("VALIDATION", "Bản không server không có mua gói – mọi tính năng đã mở sẵn");
     try {
       return await cloud("/api/client/v1/orders", { method: "POST", body: { planCode, gateway: gateway ?? null }, token: token() });
     } catch (e) {
@@ -82,6 +86,7 @@ export const cloudHandlers = {
     }
   },
   "billing.orders": async () => {
+    if (!CLOUD_ENABLED) return [];
     try {
       return await cloud("/api/client/v1/orders", { token: token() });
     } catch (e) {
@@ -89,6 +94,7 @@ export const cloudHandlers = {
     }
   },
   "cloud.notifications": async () => {
+    if (!CLOUD_ENABLED) return { items: [], unread: 0, offline: false };
     const u = activeUser();
     const t = u ? readCloudSession(u.id)?.customerToken : null;
     if (!t) return { items: [], unread: 0, offline: false };
@@ -101,6 +107,7 @@ export const cloudHandlers = {
     }
   },
   "cloud.notificationsSeen": async () => {
+    if (!CLOUD_ENABLED) return;
     try {
       await cloud("/api/client/v1/notifications/seen", { method: "POST", token: token(), timeoutMs: 1e4 });
     } catch (e) {

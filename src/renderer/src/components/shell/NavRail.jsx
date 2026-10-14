@@ -40,7 +40,7 @@ export function NavRail() {
         </button>
       </div>
       <nav className="flex flex-col gap-0.5">
-        {navItems.map(({ path, label, icon: Icon, badge: staticBadge, shortcut, feature }) => {
+        {navItems.filter((it) => !(it.path === "/billing" && lic?.plan === "local")).map(({ path, label, icon: Icon, badge: staticBadge, shortcut, feature }) => {
           const isLocked = locked(feature);
           const badge = path === "/inbox" && unread > 0 ? unread > 99 ? "99+" : String(unread) : staticBadge;
           return <NavLink

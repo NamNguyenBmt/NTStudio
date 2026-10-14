@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { authRoot } from "../paths";
 
-export const CLOUD_URL = (process.env.OMNI_CLOUD_URL ?? "https://api.omnira.io.vn").replace(/\/+$/, "");
+// Chưa có server NT Cloud: để trống → app chạy chế độ không server (tài khoản lưu trên máy, không cần license).
+// Khi có server (vd Vercel) thì đặt địa chỉ vào DEFAULT_CLOUD_URL hoặc biến môi trường NT_CLOUD_URL.
+const DEFAULT_CLOUD_URL = "";
+export const CLOUD_URL = (process.env.NT_CLOUD_URL ?? DEFAULT_CLOUD_URL).replace(/\/+$/, "");
+export const CLOUD_ENABLED = CLOUD_URL !== "";
 
 export class CloudError extends Error {
   constructor(code, message, status) {
@@ -18,6 +22,7 @@ export class CloudError extends Error {
 }
 
 export async function cloud(path, init = {}) {
+  if (!CLOUD_ENABLED) throw new CloudError("NO_SERVER", "Bản này chạy không cần server – tính năng này cần NT Cloud (chưa có)", 0);
   let res;
   try {
     res = await fetch(CLOUD_URL + path, {

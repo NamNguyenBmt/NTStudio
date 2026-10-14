@@ -21,6 +21,40 @@ khoá API `ai.omnira`, tên hàm/component nội bộ (`omniraChat`, `OmniraAiCa
 `src/main/legacy-data.js`: máy đã có `%APPDATA%\Omnira Studio` thì tiếp tục dùng thư mục dữ liệu đó (trừ khi chạy với
 `--user-data-dir`).
 
+## Chế độ không server
+
+Server cũ `api.omnira.io.vn` đã bỏ. `src/main/cloud/client.js`: `DEFAULT_CLOUD_URL = ""` → `CLOUD_ENABLED = false`, app chạy
+không cần server:
+- Tạo tài khoản / đăng nhập ngay trên máy (mật khẩu băm trong `auth/users.json`), không mã email, không quên mật khẩu.
+  Tài khoản cũ đã có trên máy đăng nhập bằng mật khẩu cũ.
+- License luôn "active": gói "Bản không server", mở đủ tính năng, không giới hạn kênh / luồng Flow / máy.
+- Ẩn "Gói & thanh toán", thẻ "AI NT"; AI văn bản dùng key riêng nhập trong Cài đặt.
+- Kết nối Facebook / TikTok / YouTube dùng ứng dụng riêng của bạn (Cài đặt → Ứng dụng Meta / TikTok, Hướng dẫn kết nối → YouTube).
+- Kho video miễn phí (Pexels/Pixabay) cần nhập key riêng.
+
+Khi có server mới (vd Vercel): đặt địa chỉ vào `DEFAULT_CLOUD_URL` (hoặc biến môi trường `NT_CLOUD_URL` khi chạy) → mọi
+đường gọi cloud bật lại. Server cần trả token license ký RS256 bằng khoá riêng mới: thay `LICENSE_PUBLIC_KEY`,
+`LICENSE_KEY_ID` và audience `omnira-studio` trong `src/main/license/index.js`.
+
+API mà app gọi tới (tiền tố `/api/client/v1` trừ dòng `/api/public`):
+
+| Nhóm | Endpoint | Dùng cho |
+|---|---|---|
+| Tài khoản | `auth/register`, `auth/register/verify`, `auth/register/resend` | Đăng ký + mã xác thực email |
+| | `auth/login` | Đăng nhập |
+| | `auth/password/forgot`, `auth/password/reset` | Quên mật khẩu qua email |
+| | `GET/PUT me`, `me/password` | Hồ sơ, đổi mật khẩu, danh sách máy |
+| License | `license/activate`, `license/heartbeat`, `license/deactivate` | Kích hoạt / kiểm tra 6 giờ một lần / trả chỗ máy |
+| | `DELETE devices/:id` | Gỡ máy khỏi tài khoản |
+| Thanh toán | `/api/public/plans` | Bảng giá gói |
+| | `POST/GET orders`, `GET orders/:code` | Tạo đơn (VietQR / PayOS), theo dõi đơn |
+| | `/api/public/referral/:code` | Kiểm tra mã giới thiệu |
+| Kết nối MXH | `oauth/config`, `oauth/:p/start`, `oauth/sessions/:id`, `oauth/:p/refresh` | Đăng nhập FB/TikTok/YouTube bằng app chung của NT |
+| Dịch vụ chung | `ai/chat`, `ai/quota` | AI văn bản miễn phí theo gói |
+| | `app-config` | Key Pexels/Pixabay dùng chung |
+| | `notifications`, `notifications/seen` | Thông báo trong app |
+| | `/api/public/app` | Bản mới nhất, bắt buộc cập nhật, thông báo chung |
+
 ## Chạy & đóng gói
 
 ```bash
