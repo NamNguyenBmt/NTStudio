@@ -3,17 +3,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { ApiError } from "../errors";
 import { mediaDir } from "../media/paths";
-import {
-  setVeoSource,
-  setFlowConcurrency,
-  setFlowHidden,
-  closeFlowChrome,
-  openFlowLogin,
-  checkFlowLogin,
-  resetFlowProfile,
-  refreshFlowCredits,
-  flowStatus,
-} from "../flow/session";
+import { setVeoSource, setFlowConcurrency, setFlowHidden, closeFlowChrome, openFlowLogin, checkFlowLogin, resetFlowProfile, refreshFlowCredits, flowStatus } from "../flow/session";
 import { flowDiagnosticsDir, setFlowModel, sampleFramePng, flowGenerate } from "../flow/video";
 import { setFlowImages } from "../flow/image";
 
@@ -70,10 +60,7 @@ export const flowHandlers = {
     try {
       const signal = testAbort.signal;
       if (dryRun) {
-        const diagnostics = await wrap(
-          () => flowGenerate({ prompt, aspect, start: sampleFramePng(), dest: "", signal, dryRun: true }),
-          "Kiểm tra giao diện Flow thất bại",
-        );
+        const diagnostics = await wrap(() => flowGenerate({ prompt, aspect, start: sampleFramePng(), dest: "", signal, dryRun: true }), "Kiểm tra giao diện Flow thất bại");
         return { file: null, diagnostics };
       }
       await wrap(() => flowGenerate({ prompt, aspect, dest: join(mediaDir(), rel), signal }), "Tạo thử thất bại");
@@ -89,5 +76,5 @@ export const flowHandlers = {
     const dir = flowDiagnosticsDir();
     mkdirSync(dir, { recursive: true });
     void shell.openPath(dir);
-  },
+  }
 };

@@ -11,7 +11,7 @@ export const encoderLabel = {
   h264_nvenc: "NVIDIA NVENC",
   h264_amf: "AMD AMF",
   h264_qsv: "Intel QuickSync",
-  libx264: "CPU libx264",
+  libx264: "CPU libx264"
 };
 
 function getSetting(key) {
@@ -19,11 +19,7 @@ function getSetting(key) {
 }
 
 function setSetting(key, value) {
-  getDb()
-    .insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } })
-    .run();
+  getDb().insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } }).run();
 }
 
 export async function detectEncoders() {
@@ -36,32 +32,14 @@ export async function detectEncoders() {
       continue;
     }
     try {
-      await runFfmpeg([
-        "-loglevel",
-        "error",
-        "-f",
-        "lavfi",
-        "-i",
-        "color=black:s=256x256:r=30:d=0.2",
-        "-c:v",
-        enc,
-        "-f",
-        "null",
-        "-",
-      ]);
+      await runFfmpeg(["-loglevel", "error", "-f", "lavfi", "-i", "color=black:s=256x256:r=30:d=0.2", "-c:v", enc, "-f", "null", "-"]);
       tested.push({ encoder: enc, ok: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       tested.push({ encoder: enc, ok: false, error: msg.length > 160 ? `${msg.slice(0, 160)}…` : msg });
     }
   }
-  const info = {
-    version,
-    tested,
-    detectedAt: Date.now(),
-    chosen: "libx264",
-    preferred: getSetting(PREF_KEY) ?? "auto",
-  };
+  const info = { version, tested, detectedAt: Date.now(), chosen: "libx264", preferred: getSetting(PREF_KEY) ?? "auto" };
   info.chosen = pick(info);
   setSetting(CACHE_KEY, { version, tested, detectedAt: info.detectedAt });
   return info;
@@ -86,28 +64,13 @@ export function setPreferredEncoder(enc) {
 }
 
 export async function currentEncoder() {
-  return (cachedEncoders() ?? (await detectEncoders())).chosen;
+  return (cachedEncoders() ?? await detectEncoders()).chosen;
 }
 
 export function encoderArgs(enc) {
   switch (enc) {
     case "h264_nvenc":
-      return [
-        "-c:v",
-        "h264_nvenc",
-        "-preset",
-        "p5",
-        "-rc",
-        "vbr",
-        "-cq",
-        "23",
-        "-b:v",
-        "8M",
-        "-maxrate",
-        "12M",
-        "-bufsize",
-        "16M",
-      ];
+      return ["-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", "23", "-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M"];
     case "h264_amf":
       return ["-c:v", "h264_amf", "-quality", "balanced", "-rc", "vbr_peak", "-b:v", "8M", "-maxrate", "12M"];
     case "h264_qsv":

@@ -2,11 +2,10 @@ import { useEffect } from "react";
 import { omni } from "./api";
 import { useUiStore } from "../stores/ui";
 
-const media = () =>
-  typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+const media = () => typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
 export function resolveTheme(pref) {
-  return pref === "system" ? (media()?.matches === false ? "light" : "dark") : pref;
+  return pref === "system" ? media()?.matches === false ? "light" : "dark" : pref;
 }
 
 function apply(pref) {

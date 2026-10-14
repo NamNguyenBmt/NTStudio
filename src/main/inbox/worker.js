@@ -1,6 +1,3 @@
-import { applyRules } from "./rules";
-import { aiSettings, quickEngagement, setAiKick, clearAiQueue, enqueueAi, draftCount } from "./ai-reply";
-import { syncChannel } from "./sync";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { eq, and, ne, or, isNull, lte, asc } from "drizzle-orm";
@@ -11,6 +8,12 @@ import { attachmentKind } from "../../shared/video";
 import { PublishError, graph, fileForm } from "../publish/http";
 import { readCred, markChannel } from "../publish/credentials";
 import { freshYoutubeCred, youtubeReply, youtubeHoldComment } from "../publish/youtube";
+import { applyRules } from "./rules";
+import "../ai/long-video";
+import "../ai/film-prompts";
+import "../ai/bible";
+import { aiSettings, quickEngagement, setAiKick, clearAiQueue, enqueueAi, draftCount } from "./ai-reply";
+import { syncChannel } from "./sync";
 
 const MIME = {
   jpg: "image/jpeg",
@@ -23,7 +26,7 @@ const MIME = {
   mp3: "audio/mpeg",
   m4a: "audio/mp4",
   wav: "audio/wav",
-  pdf: "application/pdf",
+  pdf: "application/pdf"
 };
 
 const mimeOf = (f) => MIME[f.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream";
@@ -58,19 +61,11 @@ function autoSyncEnabled() {
 }
 
 export function setAutoSync(enabled) {
-  getDb()
-    .insert(settings)
-    .values({ key: "inbox.autoSync", value: enabled })
-    .onConflictDoUpdate({ target: settings.key, set: { value: enabled, updatedAt: new Date() } })
-    .run();
+  getDb().insert(settings).values({ key: "inbox.autoSync", value: enabled }).onConflictDoUpdate({ target: settings.key, set: { value: enabled, updatedAt: new Date() } }).run();
 }
 
 export function inboxWorkerStatus() {
-  const pending = getDb()
-    .select({ id: messages.id })
-    .from(messages)
-    .where(eq(messages.deliveryStatus, "pending"))
-    .all().length;
+  const pending = getDb().select({ id: messages.id }).from(messages).where(eq(messages.deliveryStatus, "pending")).all().length;
   return { autoSync: autoSyncEnabled(), syncing: syncing != null, lastSync, pending, drafts: draftCount(), version };
 }
 
@@ -119,26 +114,12 @@ export function syncAll(channelId, scope = "all") {
     const changedChannels = [];
     let rateLimited = false;
     const db = getDb();
-    const list = db
-      .select()
-      .from(channels)
-      .where(
-        and(
-          ne(channels.tokenStatus, "missing"),
-          ne(channels.platform, "tiktok"),
-          channelId ? eq(channels.id, channelId) : void 0,
-        ),
-      )
-      .all();
+    const list = db.select().from(channels).where(and(ne(channels.tokenStatus, "missing"), ne(channels.platform, "tiktok"), channelId ? eq(channels.id, channelId) : void 0)).all();
     const result = { at: new Date(), channels: 0, newMessages: 0, autoActions: 0, errors: [], durationMs: 0 };
     for (const ch of list) {
       if (ctl.signal.aborted) break;
       try {
-        const {
-          added,
-          errors,
-          rateLimited: limited,
-        } = await syncChannel(ch, AbortSignal.any([ctl.signal, AbortSignal.timeout(6e4)]), scope);
+        const { added, errors, rateLimited: limited } = await syncChannel(ch, AbortSignal.any([ctl.signal, AbortSignal.timeout(6e4)]), scope);
         result.channels++;
         result.newMessages += added.length;
         if (added.length) changedChannels.push(ch.name);
@@ -156,7 +137,7 @@ export function syncAll(channelId, scope = "all") {
     result.durationMs = Date.now() - started;
     if (result.channels && (scope === "all" || result.newMessages || result.errors.length)) {
       console.info(
-        `[inbox] đồng bộ ${scope === "all" ? "" : "tin nhắn "}${result.channels} kênh · ${result.newMessages} tin mới · ${result.autoActions} hành động tự động · ${result.errors.length} lỗi · ${result.durationMs}ms`,
+        `[inbox] đồng bộ ${scope === "all" ? "" : "tin nhắn "}${result.channels} kênh · ${result.newMessages} tin mới · ${result.autoActions} hành động tự động · ${result.errors.length} lỗi · ${result.durationMs}ms`
       );
     }
     for (const e of result.errors) console.warn("[inbox]", e);
@@ -178,19 +159,13 @@ export function syncAll(channelId, scope = "all") {
 function explain(err) {
   const m = err.message;
   if (/2018278|2534022|outside of allowed window|10\/2018/.test(m))
-    return new PublishError(
-      "permanent",
-      "Ngoài cửa sổ 24 giờ – Meta chỉ cho nhắn trong 24 giờ kể từ tin cuối của khách",
-    );
+    return new PublishError("permanent", "Ngoài cửa sổ 24 giờ – Meta chỉ cho nhắn trong 24 giờ kể từ tin cuối của khách");
   if (/1446036|already been replied|private repl/i.test(m))
-    return new PublishError(
-      "permanent",
-      "Bình luận này đã được nhắn riêng hoặc quá 7 ngày – không gửi private reply được nữa",
-    );
+    return new PublishError("permanent", "Bình luận này đã được nhắn riêng hoặc quá 7 ngày – không gửi private reply được nữa");
   if (/mã 10\b|mã 200|permission/i.test(m))
     return new PublishError(
       "permanent",
-      `Token thiếu quyền nhắn tin/quản lý bình luận (pages_messaging, pages_manage_engagement, instagram_manage_messages, instagram_manage_comments) – ${m}`,
+      `Token thiếu quyền nhắn tin/quản lý bình luận (pages_messaging, pages_manage_engagement, instagram_manage_messages, instagram_manage_comments) – ${m}`
     );
   return err;
 }
@@ -211,16 +186,8 @@ async function deliver(msg, conv, ch) {
     if (msg.attachments.length) throw new PublishError("permanent", "Bình luận YouTube không đính kèm được tệp");
     return youtubeReply(conv.externalId ?? target, msg.body, fresh.token, signal2);
   }
-  if (ch.platform === "tiktok")
-    throw new PublishError(
-      "permanent",
-      "TikTok không có API nhắn tin / trả lời bình luận công khai – hãy trả lời trong ứng dụng TikTok",
-    );
-  if (!conv.externalId)
-    throw new PublishError(
-      "permanent",
-      "Hội thoại không liên kết với nền tảng (dữ liệu mẫu hoặc tạo tay) – không gửi được",
-    );
+  if (ch.platform === "tiktok") throw new PublishError("permanent", "TikTok không có API nhắn tin / trả lời bình luận công khai – hãy trả lời trong ứng dụng TikTok");
+  if (!conv.externalId) throw new PublishError("permanent", "Hội thoại không liên kết với nền tảng (dữ liệu mẫu hoặc tạo tay) – không gửi được");
   const cred = readCred(ch.id);
   if (!cred?.pageId) throw new PublishError("auth", "Kênh chưa kết nối API – nhập token trong Tài khoản & Kênh");
   const token = cred.token;
@@ -237,41 +204,28 @@ async function deliver(msg, conv, ch) {
     return null;
   }
   const local = msg.attachments.filter((a) => !/^https?:/.test(a));
-  for (const a of local)
-    if (!existsSync(join(mediaDir(), a)))
-      throw new PublishError("permanent", "Không tìm thấy tệp đính kèm trên máy – chọn lại tệp");
-  if (local.length && ig)
-    throw new PublishError(
-      "permanent",
-      "Instagram API chỉ gửi được tệp qua đường dẫn công khai – hãy gửi ảnh/tệp trong ứng dụng Instagram",
-    );
+  for (const a of local) if (!existsSync(join(mediaDir(), a))) throw new PublishError("permanent", "Không tìm thấy tệp đính kèm trên máy – chọn lại tệp");
+  if (local.length && ig) throw new PublishError("permanent", "Instagram API chỉ gửi được tệp qua đường dẫn công khai – hãy gửi ảnh/tệp trong ứng dụng Instagram");
   if (local.length && conv.source === "comment") {
-    if (local.length > 1 || attachmentKind(local[0]) !== "image")
-      throw new PublishError("permanent", "Trả lời bình luận Facebook chỉ đính kèm được 1 ảnh");
+    if (local.length > 1 || attachmentKind(local[0]) !== "image") throw new PublishError("permanent", "Trả lời bình luận Facebook chỉ đính kèm được 1 ảnh");
     const target = msg.targetId ?? conv.externalId;
-    const fd = await fileForm(
-      msg.body.trim() ? { message: msg.body } : {},
-      "source",
-      join(mediaDir(), local[0]),
-      mimeOf(local[0]),
-    );
+    const fd = await fileForm(msg.body.trim() ? { message: msg.body } : {}, "source", join(mediaDir(), local[0]), mimeOf(local[0]));
     const r2 = await graph("POST", `${target}/comments`, { token, signal, multipart: fd, timeoutMs: 12e4 });
     return r2.id ?? null;
   }
   if (local.length) {
-    if (!conv.customerExternalId)
-      throw new PublishError("permanent", "Không có ID người nhận của khách trong hội thoại");
+    if (!conv.customerExternalId) throw new PublishError("permanent", "Không có ID người nhận của khách trong hội thoại");
     let lastId = null;
     for (const a of local) {
       const fd = await fileForm(
         {
           recipient: JSON.stringify({ id: conv.customerExternalId }),
           messaging_type: "RESPONSE",
-          message: JSON.stringify({ attachment: { type: attachmentKind(a), payload: { is_reusable: false } } }),
+          message: JSON.stringify({ attachment: { type: attachmentKind(a), payload: { is_reusable: false } } })
         },
         "filedata",
         join(mediaDir(), a),
-        mimeOf(a),
+        mimeOf(a)
       );
       const r2 = await graph("POST", `${cred.pageId}/messages`, { token, signal, multipart: fd, timeoutMs: 12e4 });
       lastId = r2.message_id ?? lastId;
@@ -284,36 +238,25 @@ async function deliver(msg, conv, ch) {
       const r3 = await graph("POST", `${cred.pageId}/messages`, {
         token,
         signal,
-        form: { recipient: JSON.stringify({ comment_id: msg.targetId }), message: JSON.stringify({ text: msg.body }) },
+        form: { recipient: JSON.stringify({ comment_id: msg.targetId }), message: JSON.stringify({ text: msg.body }) }
       });
       return r3.message_id ?? null;
     }
     const target = msg.targetId ?? conv.externalId;
-    const r2 = await graph("POST", ig ? `${target}/replies` : `${target}/comments`, {
-      token,
-      signal,
-      form: { message: msg.body },
-    });
+    const r2 = await graph("POST", ig ? `${target}/replies` : `${target}/comments`, { token, signal, form: { message: msg.body } });
     return r2.id ?? null;
   }
   if (!conv.customerExternalId) throw new PublishError("permanent", "Không có ID người nhận của khách trong hội thoại");
   const r = await graph("POST", `${cred.pageId}/messages`, {
     token,
     signal,
-    form: {
-      recipient: JSON.stringify({ id: conv.customerExternalId }),
-      messaging_type: "RESPONSE",
-      message: JSON.stringify({ text: msg.body }),
-    },
+    form: { recipient: JSON.stringify({ id: conv.customerExternalId }), messaging_type: "RESPONSE", message: JSON.stringify({ text: msg.body }) }
   });
   return r.message_id ?? null;
 }
 
 function ruleAction(ruleId) {
-  return (
-    getDb().select({ action: autoReplyRules.action }).from(autoReplyRules).where(eq(autoReplyRules.id, ruleId)).get()
-      ?.action ?? ""
-  );
+  return getDb().select({ action: autoReplyRules.action }).from(autoReplyRules).where(eq(autoReplyRules.id, ruleId)).get()?.action ?? "";
 }
 
 async function flushOutbox() {
@@ -321,20 +264,9 @@ async function flushOutbox() {
   sending = true;
   try {
     const db = getDb();
-    for (;;) {
+    for (; ; ) {
       const now = new Date();
-      const msg = db
-        .select()
-        .from(messages)
-        .where(
-          and(
-            eq(messages.deliveryStatus, "pending"),
-            eq(messages.direction, "out"),
-            or(isNull(messages.sendAfter), lte(messages.sendAfter, now)),
-          ),
-        )
-        .orderBy(asc(messages.createdAt))
-        .get();
+      const msg = db.select().from(messages).where(and(eq(messages.deliveryStatus, "pending"), eq(messages.direction, "out"), or(isNull(messages.sendAfter), lte(messages.sendAfter, now)))).orderBy(asc(messages.createdAt)).get();
       if (!msg) break;
       const conv = db.select().from(conversations).where(eq(conversations.id, msg.conversationId)).get();
       const ch = conv ? db.select().from(channels).where(eq(channels.id, conv.channelId)).get() : void 0;
@@ -342,62 +274,30 @@ async function flushOutbox() {
       try {
         if (!conv || !ch) throw new PublishError("permanent", "Hội thoại hoặc kênh đã bị xóa");
         const externalId = await deliver(msg, conv, ch);
-        db.update(messages)
-          .set({
-            deliveryStatus: "sent",
-            externalId: externalId ?? msg.externalId,
-            attempts,
-            error: null,
-            sendAfter: null,
-          })
-          .where(eq(messages.id, msg.id))
-          .run();
-        console.info(
-          `[inbox] đã gửi ${msg.action === "hide" ? "lệnh ẩn bình luận" : msg.author === "bot" ? "trả lời tự động" : "tin nhắn"} (${ch.name})`,
-        );
+        db.update(messages).set({ deliveryStatus: "sent", externalId: externalId ?? msg.externalId, attempts, error: null, sendAfter: null }).where(eq(messages.id, msg.id)).run();
+        console.info(`[inbox] đã gửi ${msg.action === "hide" ? "lệnh ẩn bình luận" : msg.author === "bot" ? "trả lời tự động" : "tin nhắn"} (${ch.name})`);
       } catch (err) {
         if (ctl.signal.aborted) break;
-        const e = explain(
-          err instanceof PublishError
-            ? err
-            : new PublishError("transient", err instanceof Error ? err.message : String(err)),
-        );
+        const e = explain(err instanceof PublishError ? err : new PublishError("transient", err instanceof Error ? err.message : String(err)));
         const retry = (e.kind === "transient" || e.kind === "rate_limit") && attempts <= RETRY_MIN.length;
-        db.update(messages)
-          .set(
-            retry
-              ? {
-                  attempts,
-                  error: `${e.message} – đang thử lại`,
-                  sendAfter: new Date(Date.now() + RETRY_MIN[attempts - 1] * 6e4),
-                }
-              : { deliveryStatus: "failed", attempts, error: e.message, sendAfter: null },
-          )
-          .where(eq(messages.id, msg.id))
-          .run();
+        db.update(messages).set(
+          retry ? { attempts, error: `${e.message} – đang thử lại`, sendAfter: new Date(Date.now() + RETRY_MIN[attempts - 1] * 6e4) } : { deliveryStatus: "failed", attempts, error: e.message, sendAfter: null }
+        ).where(eq(messages.id, msg.id)).run();
         console.warn(`[inbox] gửi lỗi (${ch?.name ?? "?"}, ${e.kind}): ${e.message}${retry ? " → thử lại" : ""}`);
         if (!retry && ch && /mã 190/.test(e.message)) {
           markChannel(ch.id, { tokenStatus: "expired", health: "error" });
-          db.insert(alerts)
-            .values({
-              id: newId(),
-              severity: "error",
-              kind: "token_invalid",
-              entityType: "channel",
-              entityId: ch.id,
-              title: `Token kênh ${ch.name} không dùng được`,
-              message: e.message.slice(0, 300),
-            })
-            .run();
+          db.insert(alerts).values({
+            id: newId(),
+            severity: "error",
+            kind: "token_invalid",
+            entityType: "channel",
+            entityId: ch.id,
+            title: `Token kênh ${ch.name} không dùng được`,
+            message: e.message.slice(0, 300)
+          }).run();
         }
         if (!retry && msg.author === "bot")
-          db.insert(activityLog)
-            .values({
-              level: "warn",
-              scope: "inbox",
-              message: `Bot không gửi được (${ch?.name ?? "?"}): ${e.message.slice(0, 100)}`,
-            })
-            .run();
+          db.insert(activityLog).values({ level: "warn", scope: "inbox", message: `Bot không gửi được (${ch?.name ?? "?"}): ${e.message.slice(0, 100)}` }).run();
       }
       version++;
     }
@@ -409,11 +309,7 @@ async function flushOutbox() {
 }
 
 export function resend(messageId) {
-  const res = getDb()
-    .update(messages)
-    .set({ deliveryStatus: "pending", error: null, sendAfter: null, attempts: 0 })
-    .where(and(eq(messages.id, messageId), eq(messages.deliveryStatus, "failed")))
-    .run();
+  const res = getDb().update(messages).set({ deliveryStatus: "pending", error: null, sendAfter: null, attempts: 0 }).where(and(eq(messages.id, messageId), eq(messages.deliveryStatus, "failed"))).run();
   if (res.changes) kickOutbox();
   return res.changes > 0;
 }

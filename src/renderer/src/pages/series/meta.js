@@ -10,10 +10,8 @@ export function characterPrompt(c, s) {
     c.personality ? `Personality (show it through facial expression and pose): ${c.personality}` : "",
     `Visual style: ${s.visualStyle?.trim() || "photorealistic, cinematic lighting, high detail"}.`,
     "Composition: full body, front view, natural standing pose, plain light grey background, soft even lighting, sharp focus on the face, vertical 2:3 image.",
-    "Only this one character. No text, no captions, no watermark, no logo.",
-  ]
-    .filter(Boolean)
-    .join("\n");
+    "Only this one character. No text, no captions, no watermark, no logo."
+  ].filter(Boolean).join("\n");
 }
 
 export const INV = ["series.", "studio.", "film."];
@@ -22,7 +20,7 @@ export const statusMeta = {
   planned: { label: "Dàn ý", tone: "neutral" },
   scripted: { label: "Đã có kịch bản", tone: "secondary" },
   rendered: { label: "Đã render", tone: "success" },
-  published: { label: "Đã đăng", tone: "success" },
+  published: { label: "Đã đăng", tone: "success" }
 };
 
 export const EMPTY_SERIES_FORM = {
@@ -35,5 +33,5 @@ export const EMPTY_SERIES_FORM = {
   renderMode: "semi_ai",
   targetChannelId: "",
   dialogueLanguage: DEFAULT_DIALOGUE_LANGUAGE,
-  notes: "",
+  notes: ""
 };

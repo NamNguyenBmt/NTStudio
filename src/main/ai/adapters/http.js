@@ -1,4 +1,5 @@
 import { AiError } from "../providers";
+import "./anthropic";
 
 export function errorFromStatus(status, detail) {
   const msg = `HTTP ${status}${detail ? ` – ${detail}` : ""}`;
@@ -14,7 +15,7 @@ function errorDetail(body) {
   const first = Array.isArray(body) ? body[0] : body;
   if (!first || typeof first !== "object") return "";
   const b = first;
-  const raw = typeof b.error === "string" ? b.error : (b.error?.message ?? b.message ?? "");
+  const raw = typeof b.error === "string" ? b.error : b.error?.message ?? b.message ?? "";
   return String(raw).slice(0, 200);
 }
 

@@ -1,5 +1,5 @@
-import os from "node:os";
 import { app } from "electron";
+import os from "node:os";
 
 function sampleCpu() {
   let idle = 0;
@@ -24,7 +24,7 @@ export function startSystemStats(emit, intervalMs = 2e3) {
       cpu: Math.round(cpu * 10) / 10,
       appMemoryMb: Math.round(appMemoryKb / 1024),
       totalMemoryMb: Math.round(os.totalmem() / 1024 / 1024),
-      freeMemoryMb: Math.round(os.freemem() / 1024 / 1024),
+      freeMemoryMb: Math.round(os.freemem() / 1024 / 1024)
     });
   };
   const timer = setInterval(tick, intervalMs);

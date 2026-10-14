@@ -3,49 +3,26 @@ import { extname, join } from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 import { ffmpegPath } from "../media/ffmpeg";
+import { promptCandidates, visible, clickFirst, sendButton, settingsButton, checkRadio, acceptUploadConsent, tiles, FAIL_TEXT, FlowTransientError, flowFailure, withFlowRetry, saveDiagnostics, isEditView, slotPages, slotConfig, backToGrid, openProject, acquire, requireFlowFeature } from "./video";
 import { getSetting, putSetting, loginState, flowHidden, sleep, ensureChrome, placeWindows, context } from "./session";
-import {
-  promptCandidates,
-  visible,
-  clickFirst,
-  sendButton,
-  settingsButton,
-  checkRadio,
-  acceptUploadConsent,
-  tiles,
-  FAIL_TEXT,
-  FlowTransientError,
-  flowFailure,
-  withFlowRetry,
-  saveDiagnostics,
-  isEditView,
-  slotPages,
-  slotConfig,
-  backToGrid,
-  openProject,
-  acquire,
-  requireFlowFeature,
-} from "./video";
 
 export const flowImagesEnabled = () => getSetting("flow.images", true) !== false;
 export const setFlowImages = (on) => putSetting("flow.images", on);
 export const flowImagesReady = () => flowImagesEnabled() && loginState().loggedIn;
 
 async function configureImage(page, aspect) {
-  if (!(await clickFirst([settingsButton(page)], 8e3))) throw new Error("Không tìm thấy nút cài đặt tạo trong Flow");
+  if (!await clickFirst([settingsButton(page)], 8e3)) throw new Error("Không tìm thấy nút cài đặt tạo trong Flow");
   await sleep(800);
   await checkRadio(page, /hình ảnh|image/i, "Hình ảnh", true);
   await checkRadio(page, new RegExp(`^\\s*(crop_\\w+\\s*)?${aspect.replace(":", "\\:")}\\s*$`), aspect, false);
-  const modelBtn = page
-    .getByRole("button", { name: /chọn nhóm mô hình|select model|model/i })
-    .or(page.locator("button", { hasText: /arrow_drop_down/ }));
+  const modelBtn = page.getByRole("button", { name: /chọn nhóm mô hình|select model|model/i }).or(page.locator("button", { hasText: /arrow_drop_down/ }));
   if (await visible(modelBtn, 2500)) {
-    const cur = (await modelBtn.first().textContent()) ?? "";
+    const cur = await modelBtn.first().textContent() ?? "";
     if (!/nano banana/i.test(cur)) {
       await modelBtn.first().click();
       await sleep(700);
       const item = page.getByRole("menuitem").filter({ hasText: /nano banana/i });
-      if (!(await visible(item, 3e3))) throw new Error("Flow không có model Nano Banana");
+      if (!await visible(item, 3e3)) throw new Error("Flow không có model Nano Banana");
       await item.first().click();
       await sleep(700);
     }
@@ -53,11 +30,7 @@ async function configureImage(page, aspect) {
   await checkRadio(page, /^\s*x1\s*$/, "x1", false);
   await page.keyboard.press("Escape").catch(() => void 0);
   await sleep(600);
-  const summary =
-    (await settingsButton(page)
-      .first()
-      .textContent()
-      .catch(() => "")) ?? "";
+  const summary = await settingsButton(page).first().textContent().catch(() => "") ?? "";
   if (/video/i.test(summary)) throw new Error("Không chuyển được Flow sang chế độ Hình ảnh");
 }
 
@@ -67,18 +40,13 @@ async function uploadAndPick(page, file, what) {
   copyFileSync(file, tmp);
   try {
     const chooser = page.waitForEvent("filechooser", { timeout: 15e3 });
-    if (!(await clickFirst([page.getByRole("button", { name: /tải nội dung nghe nhìn lên|upload/i })], 6e3)))
-      throw new Error(`Không tìm thấy nút tải ${what} lên trong Flow`);
+    if (!await clickFirst([page.getByRole("button", { name: /tải nội dung nghe nhìn lên|upload/i })], 6e3)) throw new Error(`Không tìm thấy nút tải ${what} lên trong Flow`);
     await (await chooser).setFiles(tmp);
     const item = page.getByRole("option").filter({ hasText: name });
     const t0 = Date.now();
-    for (;;) {
+    for (; ; ) {
       await acceptUploadConsent(page);
-      const txt =
-        (await item
-          .first()
-          .textContent({ timeout: 1e3 })
-          .catch(() => null)) ?? "";
+      const txt = await item.first().textContent({ timeout: 1e3 }).catch(() => null) ?? "";
       if (txt && !/đang tải lên|uploading/i.test(txt)) break;
       if (Date.now() - t0 > 9e4) throw new Error(`Tải ${what} lên Flow quá lâu`);
       await sleep(700);
@@ -98,47 +66,31 @@ async function uploadAndPick(page, file, what) {
 export async function attachRefs(page, refs) {
   for (const f of refs) {
     const add = page.getByRole("button", { name: /thêm thành phần vào ô nhập câu lệnh|add ingredient|add to prompt/i });
-    if (!(await clickFirst([add], 5e3))) throw new Error("Không tìm thấy nút thêm ảnh tham chiếu trong Flow");
+    if (!await clickFirst([add], 5e3)) throw new Error("Không tìm thấy nút thêm ảnh tham chiếu trong Flow");
     await sleep(900);
     await uploadAndPick(page, f, "ảnh tham chiếu");
-    if (
-      await page
-        .getByRole("button", { name: /tải nội dung nghe nhìn lên|upload/i })
-        .first()
-        .isVisible()
-        .catch(() => false)
-    )
-      await page.keyboard.press("Escape");
+    if (await page.getByRole("button", { name: /tải nội dung nghe nhìn lên|upload/i }).first().isVisible().catch(() => false)) await page.keyboard.press("Escape");
   }
 }
 
 async function gridImages(page) {
-  return page
-    .$$eval("flow-grid-tile-container", (els) =>
-      els
-        .map((e) => {
-          const img = e.querySelector("flow-image-tile img[data-media-id]");
-          return {
-            id: img?.getAttribute("data-media-id") || "",
-            title: (e.getAttribute("aria-label") || "") + " " + (e.querySelector(".footer-title")?.textContent || ""),
-            src: img?.currentSrc || img?.getAttribute("src") || "",
-            loaded: !!img && img.complete && img.naturalWidth > 0,
-          };
-        })
-        .filter((t) => t.id),
-    )
-    .catch(() => []);
+  return page.$$eval(
+    "flow-grid-tile-container",
+    (els) => els.map((e) => {
+      const img = e.querySelector("flow-image-tile img[data-media-id]");
+      return {
+        id: img?.getAttribute("data-media-id") || "",
+        title: (e.getAttribute("aria-label") || "") + " " + (e.querySelector(".footer-title")?.textContent || ""),
+        src: img?.currentSrc || img?.getAttribute("src") || "",
+        loaded: !!img && img.complete && img.naturalWidth > 0
+      };
+    }).filter((t) => t.id)
+  ).catch(() => []);
 }
 
 export async function flowGenerateImage(o) {
   const { attemptTimeoutMs, ...rest } = o;
-  return withFlowRetry(
-    "ảnh",
-    o.signal,
-    o.onStatus,
-    (signal) => generateImageOnce({ ...rest, signal }),
-    attemptTimeoutMs,
-  );
+  return withFlowRetry("ảnh", o.signal, o.onStatus, (signal) => generateImageOnce({ ...rest, signal }), attemptTimeoutMs);
 }
 
 async function generateImageOnce(o) {
@@ -181,7 +133,7 @@ async function generateImageOnce(o) {
       await box.fill(o.prompt);
       const seen = new Set((await gridImages(p)).map((t) => t.id));
       const beforeFails = (await tiles(p)).filter((x) => FAIL_TEXT.test(x.text)).length;
-      if (!(await clickFirst([sendButton(p)], 5e3))) await box.press("Enter");
+      if (!await clickFirst([sendButton(p)], 5e3)) await box.press("Enter");
       const t0 = Date.now();
       let src = null;
       while (!src) {
@@ -225,15 +177,14 @@ async function generateImageOnce(o) {
         file = `${o.destBase}${/png/.test(type) ? ".png" : ".jpg"}`;
         writeFileSync(file, body);
       }
-      await backToGrid(p, slot).catch(() => (broken = true));
+      await backToGrid(p, slot).catch(() => broken = true);
       return file;
     } finally {
       o.signal.removeEventListener("abort", abort);
     }
   } catch (err) {
     broken = true;
-    if (o.signal.aborted || (err instanceof DOMException && err.name === "AbortError"))
-      throw new DOMException("Đã hủy", "AbortError");
+    if (o.signal.aborted || err instanceof DOMException && err.name === "AbortError") throw new DOMException("Đã hủy", "AbortError");
     const dir = page && !page.isClosed() ? await saveDiagnostics(page, "image") : null;
     const msg = err instanceof Error ? err.message : String(err);
     const Err = err instanceof FlowTransientError ? FlowTransientError : Error;

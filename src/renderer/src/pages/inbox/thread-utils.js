@@ -1,9 +1,4 @@
-export const sourceLabel = {
-  comment: "Bình luận bài viết công khai",
-  messenger: "Messenger",
-  direct: "Tin nhắn Direct",
-};
-
+export const sourceLabel = { comment: "Bình luận bài viết công khai", messenger: "Messenger", direct: "Tin nhắn Direct" };
 export const time = (d) => d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
 export const dayLabel = (d) => {

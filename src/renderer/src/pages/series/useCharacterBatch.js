@@ -14,16 +14,14 @@ export function useCharacterBatch() {
   const worker = async (names) => {
     active.current++;
     try {
-      for (;;) {
+      for (; ; ) {
         const id = queue.current.shift();
         if (!id) break;
         patch(id, { status: "running", startedAt: Date.now() });
         try {
           await call("series.characterImage", { id });
           patch(id, { status: "done" });
-          void qc.invalidateQueries({
-            predicate: (q) => typeof q.queryKey[0] === "string" && /^(series|film)\./.test(q.queryKey[0]),
-          });
+          void qc.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === "string" && /^(series|film)\./.test(q.queryKey[0]) });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           patch(id, { status: "failed", error: msg });

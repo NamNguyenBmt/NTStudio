@@ -1,15 +1,5 @@
 import { app } from "electron";
-import {
-  readFileSync,
-  existsSync,
-  statfsSync,
-  createWriteStream,
-  readdirSync,
-  statSync,
-  mkdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { readFileSync, existsSync, statfsSync, createWriteStream, readdirSync, statSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import os from "node:os";
 import { execFile, spawn } from "node:child_process";
@@ -80,9 +70,7 @@ const GPU_EXTRA = ["transformers==4.57.6"];
 const VERSION = "VieNeu-TTS 3.8.3 · v3 Turbo";
 const MIN_VRAM_MB = 3e3;
 const IDLE_MS = 5 * 6e4;
-
 const SIZE_GB = { cuda: { download: 4, disk: 7 }, cpu: { download: 1.5, disk: 3 } };
-
 const root = () => join(app.getPath("userData"), "local-tts");
 const venvPython = () => join(root(), "venv", "Scripts", "python.exe");
 const manifestFile = () => join(root(), "installed.json");
@@ -109,28 +97,22 @@ function env(offline) {
     HF_HUB_DISABLE_SYMLINKS_WARNING: "1",
     HF_HUB_DISABLE_TELEMETRY: "1",
     // Cài xong thì model đã nằm sẵn trong hf/ – không gọi mạng khi chạy
-    ...(offline ? { HF_HUB_OFFLINE: "1" } : {}),
+    ...offline ? { HF_HUB_OFFLINE: "1" } : {}
   };
 }
 
 let gpuCache = null;
 
 function nvidiaSmi() {
-  const candidates = [
-    "nvidia-smi",
-    join(process.env.ProgramFiles ?? "C:\\Program Files", "NVIDIA Corporation", "NVSMI", "nvidia-smi.exe"),
-  ];
-  const tryOne = (i) =>
-    i >= candidates.length
-      ? Promise.resolve(null)
-      : new Promise((res) =>
-          execFile(
-            candidates[i],
-            ["--query-gpu=name,memory.total,driver_version", "--format=csv,noheader,nounits"],
-            { timeout: 8e3, windowsHide: true },
-            (err, out) => (err ? res(tryOne(i + 1)) : res(out)),
-          ),
-        );
+  const candidates = ["nvidia-smi", join(process.env.ProgramFiles ?? "C:\\Program Files", "NVIDIA Corporation", "NVSMI", "nvidia-smi.exe")];
+  const tryOne = (i) => i >= candidates.length ? Promise.resolve(null) : new Promise(
+    (res) => execFile(
+      candidates[i],
+      ["--query-gpu=name,memory.total,driver_version", "--format=csv,noheader,nounits"],
+      { timeout: 8e3, windowsHide: true },
+      (err, out) => err ? res(tryOne(i + 1)) : res(out)
+    )
+  );
   return tryOne(0);
 }
 
@@ -143,8 +125,7 @@ async function detectGpu(force = false) {
       const [name, vram, driver] = line.split(",").map((s) => s.trim());
       const vramMb = Number(vram);
       if (!name || !Number.isFinite(vramMb)) continue;
-      if (!gpu || vramMb > gpu.vramMb)
-        gpu = { name, vramMb, driver: driver ?? "", driverOk: Number.parseFloat(driver ?? "0") >= 570 };
+      if (!gpu || vramMb > gpu.vramMb) gpu = { name, vramMb, driver: driver ?? "", driverOk: Number.parseFloat(driver ?? "0") >= 570 };
     }
   }
   gpuCache = { gpu };
@@ -156,7 +137,7 @@ const gpuUsable = (gpu) => !!gpu && gpu.vramMb >= MIN_VRAM_MB && gpu.driverOk;
 function diskFreeGb() {
   try {
     const s = statfsSync(app.getPath("userData"));
-    return (s.bavail * s.bsize) / 1024 ** 3;
+    return s.bavail * s.bsize / 1024 ** 3;
   } catch {
     return null;
   }
@@ -169,18 +150,10 @@ function assessHardware(gpu) {
   const variant = gpuUsable(gpu) ? "cuda" : "cpu";
   const notes = [];
   let rating = variant === "cuda" ? "good" : "slow";
-  if (gpu && gpuUsable(gpu))
-    notes.push(`GPU ${gpu.name} (${(gpu.vramMb / 1024).toFixed(0)} GB VRAM) – đọc nhanh hơn thời gian thực nhiều lần`);
-  else if (gpu && gpu.vramMb < MIN_VRAM_MB)
-    notes.push(`GPU ${gpu.name} chỉ có ${(gpu.vramMb / 1024).toFixed(1)} GB VRAM (cần từ 3 GB) → chạy bằng CPU`);
-  else if (gpu)
-    notes.push(
-      `Driver NVIDIA ${gpu.driver} cũ (cần 570+) → chạy bằng CPU. Cập nhật driver rồi bấm "Dò lại" để dùng GPU`,
-    );
-  else
-    notes.push(
-      "Không có GPU rời NVIDIA → chạy bằng CPU: đọc ~1 giây audio mất ~1 giây, mỗi giọng clone lần đầu cần ~1 phút để phân tích",
-    );
+  if (gpu && gpuUsable(gpu)) notes.push(`GPU ${gpu.name} (${(gpu.vramMb / 1024).toFixed(0)} GB VRAM) – đọc nhanh hơn thời gian thực nhiều lần`);
+  else if (gpu && gpu.vramMb < MIN_VRAM_MB) notes.push(`GPU ${gpu.name} chỉ có ${(gpu.vramMb / 1024).toFixed(1)} GB VRAM (cần từ 3 GB) → chạy bằng CPU`);
+  else if (gpu) notes.push(`Driver NVIDIA ${gpu.driver} cũ (cần 570+) → chạy bằng CPU. Cập nhật driver rồi bấm "Dò lại" để dùng GPU`);
+  else notes.push("Không có GPU rời NVIDIA → chạy bằng CPU: đọc ~1 giây audio mất ~1 giây, mỗi giọng clone lần đầu cần ~1 phút để phân tích");
   if (ramGb < 6) {
     rating = "poor";
     notes.push(`RAM ${ramGb.toFixed(0)} GB – nên có từ 8 GB (model chiếm ~1–2 GB khi chạy)`);
@@ -188,11 +161,9 @@ function assessHardware(gpu) {
   if (threads < 4) {
     rating = "poor";
     notes.push(`CPU chỉ ${threads} luồng – nên có từ 4 luồng`);
-  } else if (variant === "cpu" && threads < 8)
-    notes.push(`CPU ${threads} luồng – video dài (nhiều cảnh) sẽ đọc lâu hơn`);
+  } else if (variant === "cpu" && threads < 8) notes.push(`CPU ${threads} luồng – video dài (nhiều cảnh) sẽ đọc lâu hơn`);
   const disk = diskFreeGb();
-  if (disk != null && disk < SIZE_GB[variant].disk)
-    notes.push(`Ổ đĩa còn ${disk.toFixed(1)} GB – cần trống ${SIZE_GB[variant].disk} GB để cài`);
+  if (disk != null && disk < SIZE_GB[variant].disk) notes.push(`Ổ đĩa còn ${disk.toFixed(1)} GB – cần trống ${SIZE_GB[variant].disk} GB để cài`);
   return {
     cpu: (list[0]?.model ?? "CPU").replace(/\s+/g, " ").trim(),
     threads,
@@ -201,12 +172,11 @@ function assessHardware(gpu) {
     rating,
     notes,
     variant,
-    downloadGb: SIZE_GB[variant].download,
+    downloadGb: SIZE_GB[variant].download
   };
 }
 
 const install = { running: false, stage: "", progress: 0, startedAt: null, error: null, log: [] };
-
 let installAbort = null;
 
 function log(line) {
@@ -256,7 +226,7 @@ async function download(url, file, signal, from, to) {
   const body = Readable.fromWeb(res.body);
   body.on("data", (c) => {
     got += c.length;
-    if (total) install.progress = from + ((to - from) * got) / total;
+    if (total) install.progress = from + (to - from) * got / total;
   });
   await pipeline(body, createWriteStream(file));
 }
@@ -280,7 +250,8 @@ function dirSize(dir) {
     const p = join(dir, e.name);
     try {
       n += e.isDirectory() ? dirSize(p) : statSync(p).size;
-    } catch {}
+    } catch {
+    }
   }
   return n;
 }
@@ -310,31 +281,22 @@ async function doInstall(variant, signal) {
     await run(uv, ["pip", "install", "--python", venvPython(), ...TORCH, "--index-url", TORCH_INDEX], signal);
   }
   stage(variant === "cuda" ? "Cài VieNeu-TTS" : "Cài VieNeu-TTS (bản CPU)", variant === "cuda" ? 0.7 : 0.15);
-  await run(uv, ["pip", "install", "--python", venvPython(), VIENEU, ...(variant === "cuda" ? GPU_EXTRA : [])], signal);
+  await run(uv, ["pip", "install", "--python", venvPython(), VIENEU, ...variant === "cuda" ? GPU_EXTRA : []], signal);
   stage("Tải model giọng & chạy thử (lần đầu ~1–2 phút)", 0.8);
   writeFileSync(join(root(), "engine.py"), ENGINE_SCRIPT, "utf8");
   await stopEngine();
   signal.addEventListener("abort", () => void stopEngine(), { once: true });
   const eng = await startEngine(false);
   log(`Engine: ${eng.info.backend} trên ${eng.info.device}${eng.info.gpu ? ` (${eng.info.gpu})` : ""}`);
-  if (variant === "cuda" && eng.info.device !== "cuda")
-    log("⚠ PyTorch không dùng được GPU (driver cũ?) – engine chạy bằng CPU, vẫn dùng được nhưng chậm hơn");
+  if (variant === "cuda" && eng.info.device !== "cuda") log("⚠ PyTorch không dùng được GPU (driver cũ?) – engine chạy bằng CPU, vẫn dùng được nhưng chậm hơn");
   const voices = (await eng.request({ op: "voices" }, signal, 6e4)).voices;
   const testDir = join(root(), "test");
   mkdirSync(testDir, { recursive: true });
   const sample = join(testDir, "preset.wav");
   install.progress = 0.88;
-  await eng.request(
-    { op: "synth", text: "Xin chào, đây là giọng đọc chạy trên máy của bạn.", voice: voices[0]?.[1], out: sample },
-    signal,
-    5 * 6e4,
-  );
+  await eng.request({ op: "synth", text: "Xin chào, đây là giọng đọc chạy trên máy của bạn.", voice: voices[0]?.[1], out: sample }, signal, 5 * 6e4);
   install.progress = 0.93;
-  await eng.request(
-    { op: "synth", text: "Thử clone giọng.", ref: sample, out: join(testDir, "clone.wav") },
-    signal,
-    5 * 6e4,
-  );
+  await eng.request({ op: "synth", text: "Thử clone giọng.", ref: sample, out: join(testDir, "clone.wav") }, signal, 5 * 6e4);
   await stopEngine();
   rmSync(testDir, { recursive: true, force: true });
   stage("Dọn file tạm", 0.98);
@@ -351,16 +313,14 @@ export async function startInstall() {
   const variant = s.hardware.variant;
   installAbort = new AbortController();
   Object.assign(install, { running: true, stage: "Bắt đầu", progress: 0, startedAt: Date.now(), error: null, log: [] });
-  doInstall(variant, installAbort.signal)
-    .catch((e) => {
-      install.error = installAbort?.signal.aborted ? "Đã hủy cài đặt" : e instanceof Error ? e.message : String(e);
-      log(`✖ ${install.error}`);
-      void stopEngine();
-    })
-    .finally(() => {
-      install.running = false;
-      installAbort = null;
-    });
+  doInstall(variant, installAbort.signal).catch((e) => {
+    install.error = installAbort?.signal.aborted ? "Đã hủy cài đặt" : e instanceof Error ? e.message : String(e);
+    log(`✖ ${install.error}`);
+    void stopEngine();
+  }).finally(() => {
+    install.running = false;
+    installAbort = null;
+  });
 }
 
 export function cancelInstall() {
@@ -390,22 +350,9 @@ export async function status(forceDetect = false) {
     // Cấu hình yếu vẫn cho cài – giao diện hiện đánh giá & khuyến nghị
     eligible: platformSupported && reason == null,
     reason,
-    installed: m
-      ? {
-          version: m.version,
-          variant: m.variant ?? "cuda",
-          installedAt: m.installedAt,
-          sizeBytes: m.sizeBytes,
-          voices: m.voices.length,
-        }
-      : null,
+    installed: m ? { version: m.version, variant: m.variant ?? "cuda", installedAt: m.installedAt, sizeBytes: m.sizeBytes, voices: m.voices.length } : null,
     install: { ...install, log: install.log.slice(-60) },
-    engine: {
-      running: !!engine,
-      device: engine?.info.device ?? null,
-      gpu: engine?.info.gpu ?? null,
-      backend: engine?.info.backend ?? null,
-    },
+    engine: { running: !!engine, device: engine?.info.device ?? null, gpu: engine?.info.gpu ?? null, backend: engine?.info.backend ?? null }
   };
 }
 
@@ -414,11 +361,8 @@ class Engine {
     this.proc = proc;
     let onReady;
     let onFail;
-    this.ready = new Promise((res, rej) => ((onReady = res), (onFail = rej)));
-    const startTimer = setTimeout(
-      () => (onFail(new Error("Engine giọng local khởi động quá 5 phút")), proc.kill()),
-      5 * 6e4,
-    );
+    this.ready = new Promise((res, rej) => (onReady = res, onFail = rej));
+    const startTimer = setTimeout(() => (onFail(new Error("Engine giọng local khởi động quá 5 phút")), proc.kill()), 5 * 6e4);
     proc.stdout.on("data", (b) => {
       this.buf += b.toString("utf8");
       let i;
@@ -459,9 +403,7 @@ class Engine {
     proc.on("close", (code) => {
       clearTimeout(startTimer);
       if (this.idle) clearTimeout(this.idle);
-      const err = new Error(
-        `Engine giọng local đã dừng (mã ${code})${this.stderr.length ? `: ${this.stderr.slice(-3).join(" | ")}` : ""}`,
-      );
+      const err = new Error(`Engine giọng local đã dừng (mã ${code})${this.stderr.length ? `: ${this.stderr.slice(-3).join(" | ")}` : ""}`);
       onFail(err);
       for (const p of this.pending.values()) p.reject(err);
       this.pending.clear();
@@ -521,11 +463,7 @@ function startEngine(offline = true) {
   if (engine) return engine.ready.then(() => engine);
   if (starting) return starting;
   starting = (async () => {
-    const proc = spawn(venvPython(), [join(root(), "engine.py")], {
-      cwd: root(),
-      env: env(offline),
-      windowsHide: true,
-    });
+    const proc = spawn(venvPython(), [join(root(), "engine.py")], { cwd: root(), env: env(offline), windowsHide: true });
     const e = new Engine(proc);
     engine = e;
     try {
@@ -536,7 +474,7 @@ function startEngine(offline = true) {
       proc.kill();
       throw err;
     }
-  })().finally(() => (starting = null));
+  })().finally(() => starting = null);
   return starting;
 }
 
@@ -559,11 +497,8 @@ export function presetVoices() {
 export async function synthesizeLocal(opts) {
   const m = requireInstalled();
   if (!engine) writeFileSync(join(root(), "engine.py"), ENGINE_SCRIPT, "utf8");
-  const voice = opts.voice && m.voices.some(([, id]) => id === opts.voice) ? opts.voice : (m.voices[0]?.[1] ?? null);
+  const voice = opts.voice && m.voices.some(([, id]) => id === opts.voice) ? opts.voice : m.voices[0]?.[1] ?? null;
   const eng = await startEngine(true);
-  const r = await eng.request(
-    { op: "synth", text: opts.text, voice: opts.ref ? null : voice, ref: opts.ref, out: opts.out },
-    opts.signal,
-  );
+  const r = await eng.request({ op: "synth", text: opts.text, voice: opts.ref ? null : voice, ref: opts.ref, out: opts.out }, opts.signal);
   return r.seconds;
 }

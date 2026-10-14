@@ -7,8 +7,8 @@ import { Switch } from "../../components/ui/Switch";
 import { StatusDot } from "../../components/ui/StatusDot";
 import { toast } from "../../components/ui/toast";
 import { useUiStore } from "../../stores/ui";
-import { ConversationList } from "./ConversationList";
 import { InboxSidePanel } from "./InboxSidePanel";
+import { ConversationList } from "./ConversationList";
 import { Thread } from "./Thread";
 
 function formatDuration(sec) {
@@ -34,29 +34,21 @@ export function InboxPage() {
     const v = worker?.version;
     if (v == null) return;
     if (lastVersion.current != null && v !== lastVersion.current) {
-      void qc.invalidateQueries({
-        predicate: (q) =>
-          typeof q.queryKey[0] === "string" && q.queryKey[0].startsWith("inbox.") && q.queryKey[0] !== "inbox.worker",
-      });
+      void qc.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].startsWith("inbox.") && q.queryKey[0] !== "inbox.worker" });
     }
     lastVersion.current = v;
   }, [worker?.version, qc]);
-  const runSync = () =>
-    sync.mutate(
-      {},
-      {
-        onSuccess: (r) => {
-          if (!r.channels)
-            toast.info("Chưa có kênh Facebook/Instagram nào kết nối API – vào Tài khoản & Kênh để kết nối");
-          else
-            toast.success(
-              `Đã đồng bộ ${r.channels} kênh · ${r.newMessages} tin mới${r.autoActions ? ` · ${r.autoActions} trả lời tự động` : ""}`,
-            );
-          for (const e of r.errors.slice(0, 3)) toast.error(e);
-        },
-        onError: (e) => toast.error(e.message),
+  const runSync = () => sync.mutate(
+    {},
+    {
+      onSuccess: (r) => {
+        if (!r.channels) toast.info("Chưa có kênh Facebook/Instagram nào kết nối API – vào Tài khoản & Kênh để kết nối");
+        else toast.success(`Đã đồng bộ ${r.channels} kênh · ${r.newMessages} tin mới${r.autoActions ? ` · ${r.autoActions} trả lời tự động` : ""}`);
+        for (const e of r.errors.slice(0, 3)) toast.error(e);
       },
-    );
+      onError: (e) => toast.error(e.message)
+    }
+  );
   useEffect(() => {
     if (!conversations.some((c) => c.id === selectedId)) setSelectedId(conversations[0]?.id ?? null);
   }, [conversations, selectedId]);
@@ -74,17 +66,12 @@ export function InboxPage() {
           <div className="flex items-center gap-1.5 rounded-lg bg-surface-container px-space-md py-1.5 text-body-sm">
             <StatusDot health={stats?.enabledRules ? "ok" : "idle"} live={!!stats?.enabledRules} />
             <span className="text-on-surface-variant">Auto-Reply:</span>
-            <span className="text-tertiary">
-              {stats?.enabledRules ?? 0}
-              {" luật bật"}
-            </span>
+            <span className="text-tertiary">{stats?.enabledRules ?? 0}{" luật bật"}</span>
           </div>
-          {!!worker?.drafts && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-secondary/15 px-space-md py-1.5 text-body-sm text-secondary">
-              {"AI chờ duyệt: "}
-              <b>{worker.drafts}</b>
-            </div>
-          )}
+          {!!worker?.drafts && <div className="flex items-center gap-1.5 rounded-lg bg-secondary/15 px-space-md py-1.5 text-body-sm text-secondary">
+            {"AI chờ duyệt: "}
+            <b>{worker.drafts}</b>
+          </div>}
           <div className="flex items-center gap-1.5 rounded-lg bg-surface-container px-space-md py-1.5 text-body-sm">
             <Gauge size={14} className="text-secondary" />
             <span className="text-on-surface-variant">Phản hồi TB:</span>
@@ -109,39 +96,25 @@ export function InboxPage() {
               <span title="Tin nhắn: mỗi 15 giây khi đang dùng app, 60 giây khi app chạy nền · Bình luận: mỗi 2 phút">
                 Tin nhắn mỗi 15 giây
               </span>
-              {worker?.lastSync && (
-                <span className={worker.lastSync.errors.length ? "text-warning" : "text-outline"}>
-                  {" "}
-                  {"· lần cuối "}
-                  {worker.lastSync.at.toLocaleTimeString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  })}
-                  {worker.lastSync.errors.length ? ` (${worker.lastSync.errors.length} lỗi)` : ""}
-                </span>
-              )}
+              {worker?.lastSync && <span className={worker.lastSync.errors.length ? "text-warning" : "text-outline"}>
+                {" "}
+                {"· lần cuối "}
+                {worker.lastSync.at.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                {worker.lastSync.errors.length ? ` (${worker.lastSync.errors.length} lỗi)` : ""}
+              </span>}
             </span>
           </div>
           <Button variant="primary" disabled={sync.isPending || worker?.syncing} onClick={runSync}>
-            {sync.isPending || worker?.syncing ? (
-              <LoaderCircle size={14} className="animate-spin" />
-            ) : (
-              <RefreshCw size={14} />
-            )}
+            {sync.isPending || worker?.syncing ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCw size={14} />}
             {" Đồng bộ đa kênh"}
           </Button>
         </div>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[290px_1fr] gap-space-md xl:grid-cols-[290px_1fr_290px] 2xl:grid-cols-[320px_1fr_320px]">
         <ConversationList conversations={conversations} selectedId={selectedId} onSelect={setSelectedId} />
-        {selected ? (
-          <Thread conversation={selected} quickReplies={quickReplies} />
-        ) : (
-          <div className="flex items-center justify-center rounded-xl bg-surface-container-low text-body-sm text-on-surface-variant">
-            {conversations.length ? "Chọn một hội thoại" : "Chưa có hội thoại nào trong Pocket này"}
-          </div>
-        )}
+        {selected ? <Thread conversation={selected} quickReplies={quickReplies} /> : <div className="flex items-center justify-center rounded-xl bg-surface-container-low text-body-sm text-on-surface-variant">
+          {conversations.length ? "Chọn một hội thoại" : "Chưa có hội thoại nào trong Pocket này"}
+        </div>}
         <div className="hidden min-h-0 xl:flex">
           <InboxSidePanel conversation={selected} workspaceId={workspaceId} />
         </div>

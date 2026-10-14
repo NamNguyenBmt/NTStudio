@@ -9,7 +9,7 @@ const safeStorage = createJSONStorage(() => {
     return {
       getItem: (k) => mem.get(k) ?? null,
       setItem: (k, v) => void mem.set(k, v),
-      removeItem: (k) => void mem.delete(k),
+      removeItem: (k) => void mem.delete(k)
     };
   }
 });
@@ -24,12 +24,12 @@ export const useUiStore = create()(
       activeWorkspaceId: null,
       setActiveWorkspace: (activeWorkspaceId) => set({ activeWorkspaceId }),
       theme: "system",
-      setTheme: (theme) => set({ theme }),
+      setTheme: (theme) => set({ theme })
     }),
     {
       name: "omni-ui",
       storage: safeStorage,
-      partialize: (s) => ({ railCollapsed: s.railCollapsed, activeWorkspaceId: s.activeWorkspaceId, theme: s.theme }),
-    },
-  ),
+      partialize: (s) => ({ railCollapsed: s.railCollapsed, activeWorkspaceId: s.activeWorkspaceId, theme: s.theme })
+    }
+  )
 );

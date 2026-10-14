@@ -1,6 +1,9 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
 /* Fluent Command Suite – Dark (mặc định). Giá trị là kênh RGB để Tailwind dùng được opacity. */
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   color-scheme: dark;
   --c-surface: 11 19 38; /* #0b1326 */
   --c-surface-dim: 11 19 38;
@@ -59,7 +62,7 @@
 }
 
 /* Fluent Command Suite – Light. Cùng vai trò màu, bậc riêng cho nền sáng (không phải đảo màu tự động). */
-[data-theme="light"] {
+[data-theme='light'] {
   color-scheme: light;
   --c-surface: 246 248 253; /* #f6f8fd */
   --c-surface-dim: 222 226 236;
@@ -110,7 +113,6 @@
   --c-overlay: 15 23 42;
 }
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -127,7 +129,7 @@
   }
   input,
   textarea,
-  [contenteditable="true"] {
+  [contenteditable='true'] {
     @apply select-text;
   }
   :focus-visible {

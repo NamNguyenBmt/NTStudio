@@ -8,8 +8,8 @@ export const PROVIDERS = {
     priority: 1,
     models: [
       { id: "gpt-4o", label: "gpt-4o (Chất lượng)" },
-      { id: "gpt-4o-mini", label: "gpt-4o-mini (Tiết kiệm)" },
-    ],
+      { id: "gpt-4o-mini", label: "gpt-4o-mini (Tiết kiệm)" }
+    ]
   },
   gemini: {
     label: "Gemini Flash",
@@ -19,8 +19,8 @@ export const PROVIDERS = {
     priority: 2,
     models: [
       { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
-      { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
-    ],
+      { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" }
+    ]
   },
   deepseek: {
     label: "DeepSeek V3 / R1",
@@ -30,8 +30,8 @@ export const PROVIDERS = {
     priority: 0,
     models: [
       { id: "deepseek-chat", label: "deepseek-v3 (chat)" },
-      { id: "deepseek-reasoner", label: "deepseek-r1 (reasoner)" },
-    ],
+      { id: "deepseek-reasoner", label: "deepseek-r1 (reasoner)" }
+    ]
   },
   anthropic: {
     label: "Claude",
@@ -42,8 +42,8 @@ export const PROVIDERS = {
     models: [
       { id: "claude-opus-5-5", label: "Claude Opus 5.5" },
       { id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
-      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
-    ],
+      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" }
+    ]
   },
   // ── Giọng đọc ──
   elevenlabs: {
@@ -54,8 +54,8 @@ export const PROVIDERS = {
     priority: 0,
     models: [
       { id: "eleven_multilingual_v2", label: "Multilingual v2" },
-      { id: "eleven_turbo_v2_5", label: "Turbo v2.5" },
-    ],
+      { id: "eleven_turbo_v2_5", label: "Turbo v2.5" }
+    ]
   },
   openai_tts: {
     label: "OpenAI Audio",
@@ -65,8 +65,8 @@ export const PROVIDERS = {
     priority: 1,
     models: [
       { id: "gpt-4o-mini-tts", label: "gpt-4o-mini-tts" },
-      { id: "tts-1-hd", label: "tts-1-hd" },
-    ],
+      { id: "tts-1-hd", label: "tts-1-hd" }
+    ]
   },
   google_tts: {
     label: "Google Gemini TTS",
@@ -76,8 +76,8 @@ export const PROVIDERS = {
     priority: 1,
     models: [
       { id: "gemini-2.5-flash-preview-tts", label: "Gemini 2.5 Flash TTS" },
-      { id: "gemini-2.5-pro-preview-tts", label: "Gemini 2.5 Pro TTS (hay hơn, đắt hơn)" },
-    ],
+      { id: "gemini-2.5-pro-preview-tts", label: "Gemini 2.5 Pro TTS (hay hơn, đắt hơn)" }
+    ]
   },
   edge_tts: {
     label: "Edge-TTS (Miễn phí)",
@@ -87,8 +87,8 @@ export const PROVIDERS = {
     priority: 2,
     models: [
       { id: "vi-VN-HoaiMyNeural", label: "HoaiMy (Nữ)" },
-      { id: "vi-VN-NamMinhNeural", label: "NamMinh (Nam)" },
-    ],
+      { id: "vi-VN-NamMinhNeural", label: "NamMinh (Nam)" }
+    ]
   },
   local_tts: {
     label: "VieNeu-TTS (Local)",
@@ -96,21 +96,20 @@ export const PROVIDERS = {
     tagline: "Chạy trên máy bạn – miễn phí, clone giọng; GPU NVIDIA (nhanh) hoặc CPU; cài engine ở Cài đặt",
     keyless: true,
     priority: 3,
-    models: [{ id: "vieneu-v3-turbo", label: "VieNeu v3 Turbo" }],
+    models: [{ id: "vieneu-v3-turbo", label: "VieNeu v3 Turbo" }]
   },
   // ── Hình ảnh / video ──
   google_image: {
     label: "Google Gemini – Ảnh AI",
     category: "media",
-    tagline:
-      "Model tạo ảnh Nano Banana của Gemini – dùng chung key Gemini, không cần key riêng (key cần bật billing: gói Free không được tạo ảnh qua API)",
+    tagline: "Model tạo ảnh Nano Banana của Gemini – dùng chung key Gemini, không cần key riêng (key cần bật billing: gói Free không được tạo ảnh qua API)",
     keyFrom: "gemini",
     priority: 0,
     models: [
       { id: "gemini-3.1-flash-image", label: "Gemini 3.1 Flash Image" },
       { id: "gemini-3.1-flash-lite-image", label: "Gemini 3.1 Flash-Lite Image (rẻ)" },
-      { id: "gemini-3-pro-image", label: "Gemini 3 Pro Image" },
-    ],
+      { id: "gemini-3-pro-image", label: "Gemini 3 Pro Image" }
+    ]
   },
   fal: {
     label: "Fal.ai (Flux)",
@@ -120,8 +119,8 @@ export const PROVIDERS = {
     priority: 1,
     models: [
       { id: "fal-ai/flux/schnell", label: "Flux Schnell" },
-      { id: "fal-ai/flux/dev", label: "Flux Dev" },
-    ],
+      { id: "fal-ai/flux/dev", label: "Flux Dev" }
+    ]
   },
   google_veo: {
     label: "Google Veo 3.1",
@@ -132,8 +131,8 @@ export const PROVIDERS = {
     models: [
       { id: "veo-3.1-lite-generate-preview", label: "Veo 3.1 Lite (rẻ nhất)" },
       { id: "veo-3.1-fast-generate-preview", label: "Veo 3.1 Fast" },
-      { id: "veo-3.1-generate-preview", label: "Veo 3.1 Standard" },
-    ],
+      { id: "veo-3.1-generate-preview", label: "Veo 3.1 Standard" }
+    ]
   },
   seedance: {
     label: "ByteDance Seedance 2.0 (qua fal)",
@@ -143,8 +142,8 @@ export const PROVIDERS = {
     priority: 3,
     models: [
       { id: "bytedance/seedance-2.0/fast/reference-to-video", label: "Seedance 2.0 Fast (rẻ hơn)" },
-      { id: "bytedance/seedance-2.0/reference-to-video", label: "Seedance 2.0 (chất lượng cao)" },
-    ],
+      { id: "bytedance/seedance-2.0/reference-to-video", label: "Seedance 2.0 (chất lượng cao)" }
+    ]
   },
   pexels: {
     label: "Pexels Stock",
@@ -152,7 +151,7 @@ export const PROVIDERS = {
     tagline: "B-roll video stock miễn phí",
     keyPlaceholder: "Pexels API key",
     priority: 3,
-    models: [{ id: "videos", label: "Video search" }],
+    models: [{ id: "videos", label: "Video search" }]
   },
   pixabay: {
     label: "Pixabay Stock",
@@ -160,7 +159,7 @@ export const PROVIDERS = {
     tagline: "Video & ảnh stock miễn phí (key miễn phí)",
     keyPlaceholder: "Pixabay API key",
     priority: 4,
-    models: [{ id: "videos", label: "Video search" }],
+    models: [{ id: "videos", label: "Video search" }]
   },
   replicate: {
     label: "Replicate",
@@ -170,8 +169,8 @@ export const PROVIDERS = {
     priority: 5,
     models: [
       { id: "kwaivgi/kling-v1.6-standard", label: "Kling v1.6" },
-      { id: "tencent/hunyuan-video", label: "Hunyuan Video" },
-    ],
+      { id: "tencent/hunyuan-video", label: "Hunyuan Video" }
+    ]
   },
   // ── Nhạc nền AI (tùy chọn) ──
   google_lyria: {
@@ -182,8 +181,8 @@ export const PROVIDERS = {
     priority: 0,
     models: [
       { id: "lyria-3-clip-preview", label: "Lyria 3 Clip (30 giây)" },
-      { id: "lyria-3.5", label: "Lyria 3.5 (cả bài)" },
-    ],
+      { id: "lyria-3.5", label: "Lyria 3.5 (cả bài)" }
+    ]
   },
   elevenlabs_music: {
     label: "ElevenLabs Music",
@@ -193,17 +192,15 @@ export const PROVIDERS = {
     priority: 1,
     models: [
       { id: "music_v2_5", label: "Music v2.5" },
-      { id: "music_v2", label: "Music v2" },
-    ],
-  },
+      { id: "music_v2", label: "Music v2" }
+    ]
+  }
 };
 
 export function isUsableModel(provider, id) {
   switch (provider) {
     case "openai":
-      return (
-        /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|transcribe|tts|image|search|embedding|moderation)/.test(id)
-      );
+      return /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|transcribe|tts|image|search|embedding|moderation)/.test(id);
     case "gemini":
       return /^gemini-/.test(id) && !/(embedding|tts|image|live|native-audio)/.test(id);
     case "google_image":
@@ -222,15 +219,11 @@ export function isUsableModel(provider, id) {
 export function preferredModel(provider, available) {
   if (!available.length) return null;
   if (provider === "gemini") {
-    const stable = available
-      .map((id) => ({ id, v: id.match(/^gemini-(\d+(?:\.\d+)?)-flash$/)?.[1] }))
-      .filter((x) => x.v != null)
-      .sort((a, b) => Number(b.v) - Number(a.v));
+    const stable = available.map((id) => ({ id, v: id.match(/^gemini-(\d+(?:\.\d+)?)-flash$/)?.[1] })).filter((x) => x.v != null).sort((a, b) => Number(b.v) - Number(a.v));
     if (stable[0]) return stable[0].id;
   }
   const known = PROVIDERS[provider]?.models.map((m) => m.id) ?? [];
   return known.find((k) => available.includes(k)) ?? available[0];
 }
 
-export const providerInfo = (provider) =>
-  PROVIDERS[provider] ?? { label: provider, category: "media", tagline: "", models: [], keyPlaceholder: "API key" };
+export const providerInfo = (provider) => PROVIDERS[provider] ?? { label: provider, category: "media", tagline: "", models: [], keyPlaceholder: "API key" };

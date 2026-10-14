@@ -11,5 +11,5 @@ export const IpcChannel = {
   /** Tiến trình chính → giao diện: mở một trang (vd bấm thông báo hệ thống) */
   AppNavigate: "app:navigate",
   /** Tiến trình chính → giao diện: trạng thái license đổi (hết gói, kích hoạt lại, ngoại tuyến…) */
-  LicenseChanged: "license:changed",
+  LicenseChanged: "license:changed"
 };

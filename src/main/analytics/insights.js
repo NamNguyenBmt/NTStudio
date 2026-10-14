@@ -1,10 +1,10 @@
-import { syncPostMetrics } from "./post-metrics";
 import { eq, and, ne } from "drizzle-orm";
 import { channels, channelMetricsDaily, settings } from "../db/schema";
 import { getDb } from "../db/index";
 import { PublishError, graph, tiktok } from "../publish/http";
 import { readCred, freshTikTokCred } from "../publish/credentials";
 import { freshYoutubeCred, youtubeDaily } from "../publish/youtube";
+import { syncPostMetrics } from "./post-metrics";
 
 const DAY = 864e5;
 const DAYS = 60;
@@ -16,18 +16,11 @@ async function dailyMetric(objectId, token, candidates, signal, extra = {}) {
   const since = until - DAYS * 86400;
   for (const metric of candidates) {
     try {
-      const r = await graph("GET", `${objectId}/insights`, {
-        token,
-        signal,
-        query: { metric, period: "day", since, until, ...extra },
-      });
+      const r = await graph("GET", `${objectId}/insights`, { token, signal, query: { metric, period: "day", since, until, ...extra } });
       const values = new Map();
       for (const v of r.data?.[0]?.values ?? []) {
         const day = isoDay(new Date(v.end_time).getTime() - DAY / 2);
-        const n =
-          typeof v.value === "number"
-            ? v.value
-            : Object.values(v.value ?? {}).reduce((a, b) => a + (Number(b) || 0), 0);
+        const n = typeof v.value === "number" ? v.value : Object.values(v.value ?? {}).reduce((a, b) => a + (Number(b) || 0), 0);
         values.set(day, (values.get(day) ?? 0) + n);
       }
       return { metric, values };
@@ -45,18 +38,8 @@ function merge(target, key, values) {
 async function facebookDaily(token, pageId, signal) {
   const daily = new Map();
   const notes = [];
-  const views = await dailyMetric(
-    pageId,
-    token,
-    ["page_media_view", "page_views_total", "page_impressions_unique", "page_impressions"],
-    signal,
-  );
-  const eng = await dailyMetric(
-    pageId,
-    token,
-    ["page_post_engagements", "page_total_actions", "page_engaged_users"],
-    signal,
-  );
+  const views = await dailyMetric(pageId, token, ["page_media_view", "page_views_total", "page_impressions_unique", "page_impressions"], signal);
+  const eng = await dailyMetric(pageId, token, ["page_post_engagements", "page_total_actions", "page_engaged_users"], signal);
   merge(daily, "views", views?.values);
   merge(daily, "engagements", eng?.values);
   const watch = await dailyMetric(pageId, token, ["page_video_view_time"], signal);
@@ -76,7 +59,7 @@ async function instagramDaily(token, igUserId, signal) {
   const media = await graph("GET", `${igUserId}/media`, {
     token,
     signal,
-    query: { fields: "timestamp,like_count,comments_count", limit: 100 },
+    query: { fields: "timestamp,like_count,comments_count", limit: 100 }
   });
   const cutoff = Date.now() - DAYS * DAY;
   const eng = new Map();
@@ -109,27 +92,16 @@ function save(channelId, daily, followers) {
   db.transaction((tx) => {
     for (const [day, v] of daily) {
       const set = {
-        ...(v.views != null ? { views: Math.round(v.views) } : {}),
-        ...(v.engagements != null ? { engagements: Math.round(v.engagements) } : {}),
-        ...(v.followers != null ? { followers: v.followers } : {}),
-        ...(v.watchMinutes != null ? { watchMinutes: Math.round(v.watchMinutes) } : {}),
+        ...v.views != null ? { views: Math.round(v.views) } : {},
+        ...v.engagements != null ? { engagements: Math.round(v.engagements) } : {},
+        ...v.followers != null ? { followers: v.followers } : {},
+        ...v.watchMinutes != null ? { watchMinutes: Math.round(v.watchMinutes) } : {}
       };
       if (!Object.keys(set).length) continue;
-      tx.insert(channelMetricsDaily)
-        .values({
-          channelId,
-          day,
-          views: set.views ?? 0,
-          engagements: set.engagements ?? 0,
-          followers: set.followers ?? 0,
-          watchMinutes: set.watchMinutes ?? 0,
-        })
-        .onConflictDoUpdate({ target: [channelMetricsDaily.channelId, channelMetricsDaily.day], set })
-        .run();
+      tx.insert(channelMetricsDaily).values({ channelId, day, views: set.views ?? 0, engagements: set.engagements ?? 0, followers: set.followers ?? 0, watchMinutes: set.watchMinutes ?? 0 }).onConflictDoUpdate({ target: [channelMetricsDaily.channelId, channelMetricsDaily.day], set }).run();
       rows++;
     }
-    if (followers != null)
-      tx.update(channels).set({ followers, updatedAt: new Date() }).where(eq(channels.id, channelId)).run();
+    if (followers != null) tx.update(channels).set({ followers, updatedAt: new Date() }).where(eq(channels.id, channelId)).run();
   });
   return rows;
 }
@@ -145,27 +117,14 @@ export function syncInsights() {
   if (running) return running;
   running = (async () => {
     const db = getDb();
-    const list = db
-      .select()
-      .from(channels)
-      .where(and(ne(channels.tokenStatus, "missing"), eq(channels.status, "active")))
-      .all();
+    const list = db.select().from(channels).where(and(ne(channels.tokenStatus, "missing"), eq(channels.status, "active"))).all();
     const result = { at: Date.now(), channels: 0, days: 0, posts: 0, errors: [], notes: [] };
     for (const ch of list) {
       const cred = readCred(ch.id);
       if (!cred) continue;
       const signal = AbortSignal.timeout(6e4);
       try {
-        const r =
-          ch.platform === "facebook" && cred.pageId
-            ? await facebookDaily(cred.token, cred.pageId, signal)
-            : ch.platform === "instagram" && cred.igUserId
-              ? await instagramDaily(cred.token, cred.igUserId, signal)
-              : ch.platform === "tiktok"
-                ? await tiktokDaily((await freshTikTokCred(ch.id, cred, signal)).token, signal)
-                : ch.platform === "youtube"
-                  ? await youtubeDaily((await freshYoutubeCred(ch.id, cred, signal)).token, signal)
-                  : null;
+        const r = ch.platform === "facebook" && cred.pageId ? await facebookDaily(cred.token, cred.pageId, signal) : ch.platform === "instagram" && cred.igUserId ? await instagramDaily(cred.token, cred.igUserId, signal) : ch.platform === "tiktok" ? await tiktokDaily((await freshTikTokCred(ch.id, cred, signal)).token, signal) : ch.platform === "youtube" ? await youtubeDaily((await freshYoutubeCred(ch.id, cred, signal)).token, signal) : null;
         if (!r) continue;
         result.days += save(ch.id, r.daily, r.followers);
         result.channels++;
@@ -177,14 +136,9 @@ export function syncInsights() {
     const pm = await syncPostMetrics();
     result.posts = pm.posts;
     result.errors.push(...pm.errors);
-    db.insert(settings)
-      .values({ key: "insights.lastSync", value: result })
-      .onConflictDoUpdate({ target: settings.key, set: { value: result, updatedAt: new Date() } })
-      .run();
+    db.insert(settings).values({ key: "insights.lastSync", value: result }).onConflictDoUpdate({ target: settings.key, set: { value: result, updatedAt: new Date() } }).run();
     if (result.channels || result.errors.length)
-      console.info(
-        `[insights] ${result.channels} kênh · ${result.days} ngày số liệu · ${result.posts} bài · ${result.errors.length} lỗi`,
-      );
+      console.info(`[insights] ${result.channels} kênh · ${result.days} ngày số liệu · ${result.posts} bài · ${result.errors.length} lỗi`);
     for (const e of result.errors) console.warn("[insights]", e);
     return result;
   })().finally(() => {

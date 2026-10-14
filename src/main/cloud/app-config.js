@@ -2,7 +2,6 @@ import { cloud, readCloudSession, patchCloudSession } from "./client";
 
 export const MANAGED_PROVIDERS = new Set(["pexels", "pixabay"]);
 let cache = null;
-
 let current = () => ({ userId: null, token: null });
 
 export function bindCloudSession(fn) {

@@ -16,9 +16,7 @@ const short = (u) => {
 export function openAuthWindow(o) {
   if (pending && !pending.isDestroyed()) {
     pending.focus();
-    return Promise.reject(
-      new PublishError("permanent", "Đang có một cửa sổ đăng nhập mở – hoàn tất hoặc đóng nó trước"),
-    );
+    return Promise.reject(new PublishError("permanent", "Đang có một cửa sổ đăng nhập mở – hoàn tất hoặc đóng nó trước"));
   }
   const ses = session.fromPartition(`oauth-${o.state}`, { cache: false });
   const win = new BrowserWindow({
@@ -29,7 +27,7 @@ export function openAuthWindow(o) {
     title: o.title,
     autoHideMenuBar: true,
     backgroundColor: "#ffffff",
-    webPreferences: { session: ses, sandbox: true, contextIsolation: true, nodeIntegration: false },
+    webPreferences: { session: ses, sandbox: true, contextIsolation: true, nodeIntegration: false }
   });
   pending = win;
   win.webContents.setUserAgent(chromeUa(win.webContents.getUserAgent()));
@@ -44,8 +42,8 @@ export function openAuthWindow(o) {
         height: 680,
         autoHideMenuBar: true,
         backgroundColor: "#ffffff",
-        webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
-      },
+        webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false }
+      }
     };
   });
   win.webContents.on("did-create-window", (child) => {
@@ -78,17 +76,13 @@ export function openAuthWindow(o) {
       if (err) reject(err);
       else resolve(params);
     };
-    const timer = setTimeout(
-      () => finish(new PublishError("permanent", `Hết thời gian đăng nhập ${o.provider} (10 phút)`)),
-      10 * 6e4,
-    );
+    const timer = setTimeout(() => finish(new PublishError("permanent", `Hết thời gian đăng nhập ${o.provider} (10 phút)`)), 10 * 6e4);
     onUrl = (e, target) => {
       if (!target.startsWith(o.redirectUri)) return;
       e?.preventDefault();
       const u = new URL(target);
       const params = new URLSearchParams(u.search || u.hash.slice(1));
-      if (params.get("state") !== o.state)
-        return finish(new PublishError("permanent", "Phản hồi đăng nhập không hợp lệ (state không khớp)"));
+      if (params.get("state") !== o.state) return finish(new PublishError("permanent", "Phản hồi đăng nhập không hợp lệ (state không khớp)"));
       finish(null, params);
     };
     win.webContents.on("will-redirect", (e, target) => onUrl(e, target));
@@ -111,18 +105,14 @@ export function openAuthWindow(o) {
     });
     win.on("closed", () => finish(new PublishError("permanent", "Đã đóng cửa sổ đăng nhập – hủy kết nối")));
     win.webContents.on("did-fail-load", (_e, codeNum, desc, failedUrl, isMainFrame) => {
-      if (isMainFrame && !failedUrl.startsWith(o.redirectUri) && codeNum !== -3)
-        finish(new PublishError("transient", `Không tải được trang đăng nhập ${o.provider} (${desc})`));
+      if (isMainFrame && !failedUrl.startsWith(o.redirectUri) && codeNum !== -3) finish(new PublishError("transient", `Không tải được trang đăng nhập ${o.provider} (${desc})`));
     });
     if (o.blocked) {
       win.webContents.on("did-finish-load", () => {
-        void win.webContents
-          .executeJavaScript('document.body ? document.body.innerText.slice(0, 800) : ""', true)
-          .then((text) => {
-            const msg = o.blocked(text);
-            if (msg) finish(new PublishError("permanent", msg));
-          })
-          .catch(() => void 0);
+        void win.webContents.executeJavaScript('document.body ? document.body.innerText.slice(0, 800) : ""', true).then((text) => {
+          const msg = o.blocked(text);
+          if (msg) finish(new PublishError("permanent", msg));
+        }).catch(() => void 0);
       });
     }
     void win.loadURL(o.url);

@@ -8,7 +8,7 @@ export function castOrigin(detail, a) {
 export const CAST_LABEL = {
   series: { label: "Từ series", tone: "primary", title: "Nhân vật gốc của series – ảnh chuẩn dùng chung cho mọi tập" },
   episode: { label: "Riêng tập này", tone: "secondary", title: "Vai phụ chỉ có trong tập này – tập sau không dùng" },
-  pending: { label: "Chờ duyệt", tone: "warning", title: "AI đề xuất – duyệt ở bước Kịch bản" },
+  pending: { label: "Chờ duyệt", tone: "warning", title: "AI đề xuất – duyệt ở bước Kịch bản" }
 };
 
 export function isUnusedCast(detail, a) {
@@ -17,5 +17,4 @@ export function isUnusedCast(detail, a) {
   return shots.length > 0 && !shots.some((s) => s.characterIds.includes(a.id));
 }
 
-export const pendingProposals = (detail) =>
-  detail.assets.filter((a) => a.kind === "character" && a.proposal === "pending");
+export const pendingProposals = (detail) => detail.assets.filter((a) => a.kind === "character" && a.proposal === "pending");

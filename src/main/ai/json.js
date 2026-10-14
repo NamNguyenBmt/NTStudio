@@ -1,12 +1,11 @@
 import { AiError } from "./providers";
+import "./adapters/http";
 
 function repairJson(raw) {
   let out = "";
   let inStr = false;
   let esc = false;
-  const src = raw.replace(/[“”]/g, (q, i, s) =>
-    /[{,:\[]\s*$/.test(s.slice(0, i)) || /^\s*[:,}\]]/.test(s.slice(i + 1)) ? '"' : q,
-  );
+  const src = raw.replace(/[“”]/g, (q, i, s) => /[{,:\[]\s*$/.test(s.slice(0, i)) || /^\s*[:,}\]]/.test(s.slice(i + 1)) ? '"' : q);
   for (let i = 0; i < src.length; i++) {
     const ch = src[i];
     if (inStr) {
@@ -109,7 +108,8 @@ export function extractJson(text, salvage = false) {
   if (arrStart >= 0 && (objStart < 0 || arrStart < objStart) && candidate.lastIndexOf("]") > arrStart)
     try {
       return parseLoose(candidate.slice(arrStart, candidate.lastIndexOf("]") + 1));
-    } catch {}
+    } catch {
+    }
   const start = objStart;
   const end = candidate.lastIndexOf("}");
   if (start < 0 || end <= start) throw new AiError("invalid_output", "Phản hồi không chứa JSON");
@@ -119,17 +119,15 @@ export function extractJson(text, salvage = false) {
   } catch (first) {
     const { parts, truncated } = topLevelValues(candidate.slice(start));
     if (parts.length >= 2) {
-      const values = parts
-        .map((p) => {
-          try {
-            return parseLoose(p);
-          } catch {
-            return null;
-          }
-        })
-        .filter((v) => !!v && typeof v === "object" && !Array.isArray(v));
+      const values = parts.map((p) => {
+        try {
+          return parseLoose(p);
+        } catch {
+          return null;
+        }
+      }).filter((v) => !!v && typeof v === "object" && !Array.isArray(v));
       if (values.length === 1) return values[0];
-      if (values.length) return { items: values.flatMap((v) => (Array.isArray(v.items) ? v.items : [v])) };
+      if (values.length) return { items: values.flatMap((v) => Array.isArray(v.items) ? v.items : [v]) };
     }
     if (truncated && salvage) {
       const closed = closeTruncated(candidate.slice(start));
@@ -138,10 +136,11 @@ export function extractJson(text, salvage = false) {
           const v = parseLoose(closed);
           console.warn(`[ai] JSON bị cắt giữa chừng → giữ phần hoàn chỉnh (${closed.length}/${text.length} ký tự)`);
           return v;
-        } catch {}
+        } catch {
+        }
     }
     console.warn(
-      `[ai] JSON lỗi: ${first instanceof Error ? first.message : String(first)} · dài ${text.length} ký tự · ${truncated ? "bị cắt giữa chừng" : `đủ ngoặc, ${parts.length} khối JSON`}`,
+      `[ai] JSON lỗi: ${first instanceof Error ? first.message : String(first)} · dài ${text.length} ký tự · ${truncated ? "bị cắt giữa chừng" : `đủ ngoặc, ${parts.length} khối JSON`}`
     );
     throw new AiError("invalid_output", truncated ? "AI trả về JSON bị cắt giữa chừng" : "JSON trả về không hợp lệ");
   }

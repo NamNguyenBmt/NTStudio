@@ -8,81 +8,52 @@ import { freshYoutubeCred, youtubeCommentThreads } from "../publish/youtube";
 const stateKey = (channelId) => `inbox.sync.${channelId}`;
 
 function syncState(channelId) {
-  return (
-    getDb()
-      .select()
-      .from(settings)
-      .where(eq(settings.key, stateKey(channelId)))
-      .get()?.value ?? null
-  );
+  return getDb().select().from(settings).where(eq(settings.key, stateKey(channelId))).get()?.value ?? null;
 }
 
 function saveState(channelId, state) {
-  getDb()
-    .insert(settings)
-    .values({ key: stateKey(channelId), value: state })
-    .onConflictDoUpdate({ target: settings.key, set: { value: state, updatedAt: new Date() } })
-    .run();
+  getDb().insert(settings).values({ key: stateKey(channelId), value: state }).onConflictDoUpdate({ target: settings.key, set: { value: state, updatedAt: new Date() } }).run();
 }
 
 function upsertThread(ch, conv, items, firstSync) {
   const db = getDb();
   return db.transaction((tx) => {
-    let row = tx
-      .select()
-      .from(conversations)
-      .where(and(eq(conversations.channelId, ch.id), eq(conversations.externalId, conv.externalId)))
-      .get();
+    let row = tx.select().from(conversations).where(and(eq(conversations.channelId, ch.id), eq(conversations.externalId, conv.externalId))).get();
     if (!row) {
-      row = tx
-        .insert(conversations)
-        .values({
-          id: newId(),
-          workspaceId: ch.workspaceId,
-          channelId: ch.id,
-          platform: ch.platform,
-          source: conv.source,
-          externalId: conv.externalId,
-          customerName: conv.customerName,
-          customerExternalId: conv.customerExternalId,
-          contextPostId: conv.contextPostId ?? null,
-          contextPostTitle: conv.contextPostTitle ?? null,
-        })
-        .returning()
-        .get();
+      row = tx.insert(conversations).values({
+        id: newId(),
+        workspaceId: ch.workspaceId,
+        channelId: ch.id,
+        platform: ch.platform,
+        source: conv.source,
+        externalId: conv.externalId,
+        customerName: conv.customerName,
+        customerExternalId: conv.customerExternalId,
+        contextPostId: conv.contextPostId ?? null,
+        contextPostTitle: conv.contextPostTitle ?? null
+      }).returning().get();
     }
     const ids = items.map((m) => m.externalId);
     const existing = new Set(
-      ids.length
-        ? tx
-            .select({ externalId: messages.externalId })
-            .from(messages)
-            .where(and(eq(messages.conversationId, row.id), inArray(messages.externalId, ids)))
-            .all()
-            .map((m) => m.externalId)
-        : [],
+      ids.length ? tx.select({ externalId: messages.externalId }).from(messages).where(and(eq(messages.conversationId, row.id), inArray(messages.externalId, ids))).all().map((m) => m.externalId) : []
     );
     const added = [];
     let unread = 0;
     let last = null;
     for (const m of [...items].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())) {
       if (existing.has(m.externalId)) continue;
-      const msg = tx
-        .insert(messages)
-        .values({
-          id: newId(),
-          conversationId: row.id,
-          direction: m.inbound ? "in" : "out",
-          // Tin đi ra không do app gửi = nhân viên trả lời trực tiếp trên nền tảng
-          author: m.inbound ? "customer" : "agent",
-          body: m.body,
-          attachments: m.attachments,
-          externalId: m.externalId,
-          deliveryStatus: m.inbound ? null : "sent",
-          createdAt: m.createdAt,
-        })
-        .returning()
-        .get();
+      const msg = tx.insert(messages).values({
+        id: newId(),
+        conversationId: row.id,
+        direction: m.inbound ? "in" : "out",
+        // Tin đi ra không do app gửi = nhân viên trả lời trực tiếp trên nền tảng
+        author: m.inbound ? "customer" : "agent",
+        body: m.body,
+        attachments: m.attachments,
+        externalId: m.externalId,
+        deliveryStatus: m.inbound ? null : "sent",
+        createdAt: m.createdAt
+      }).returning().get();
       if (m.inbound) {
         if (!firstSync) unread++;
         added.push({ conversation: row, message: msg });
@@ -90,46 +61,30 @@ function upsertThread(ch, conv, items, firstSync) {
       if (!last || m.createdAt > last.createdAt) last = m;
     }
     if (last && (!row.lastMessageAt || last.createdAt >= row.lastMessageAt)) {
-      row = tx
-        .update(conversations)
-        .set({
-          lastMessageAt: last.createdAt,
-          lastMessagePreview: last.body.slice(0, 140),
-          unreadCount: row.unreadCount + unread,
-          // Khách nhắn mới vào hội thoại đã xong → mở lại
-          ...(unread && row.status === "resolved" ? { status: "open" } : {}),
-          customerName: conv.customerName || row.customerName,
-          updatedAt: new Date(),
-        })
-        .where(eq(conversations.id, row.id))
-        .returning()
-        .get();
+      row = tx.update(conversations).set({
+        lastMessageAt: last.createdAt,
+        lastMessagePreview: last.body.slice(0, 140),
+        unreadCount: row.unreadCount + unread,
+        // Khách nhắn mới vào hội thoại đã xong → mở lại
+        ...unread && row.status === "resolved" ? { status: "open" } : {},
+        customerName: conv.customerName || row.customerName,
+        updatedAt: new Date()
+      }).where(eq(conversations.id, row.id)).returning().get();
     } else if (unread) {
-      row = tx
-        .update(conversations)
-        .set({ unreadCount: row.unreadCount + unread, updatedAt: new Date() })
-        .where(eq(conversations.id, row.id))
-        .returning()
-        .get();
+      row = tx.update(conversations).set({ unreadCount: row.unreadCount + unread, updatedAt: new Date() }).where(eq(conversations.id, row.id)).returning().get();
     }
     return firstSync ? [] : added.map((a) => ({ ...a, conversation: row }));
   });
 }
 
-const attachmentsOf = (m) =>
-  (m.attachments?.data ?? []).map((a) => a.image_data?.url ?? a.file_url ?? "").filter((u) => u.startsWith("https://"));
-const bodyOf = (text, attachments) =>
-  text?.trim() || (attachments.length ? "[Tệp đính kèm]" : "[Tin nhắn không có nội dung]");
+const attachmentsOf = (m) => (m.attachments?.data ?? []).map((a) => a.image_data?.url ?? a.file_url ?? "").filter((u) => u.startsWith("https://"));
+const bodyOf = (text, attachments) => text?.trim() || (attachments.length ? "[Tệp đính kèm]" : "[Tin nhắn không có nội dung]");
 
 async function syncDirect(ch, cred, platform, selfId, firstSync, signal) {
   const res = await graph("GET", `${cred.pageId}/conversations`, {
     token: cred.token,
     signal,
-    query: {
-      platform,
-      fields: "id,updated_time,participants,messages.limit(20){id,message,created_time,from,attachments}",
-      limit: 25,
-    },
+    query: { platform, fields: "id,updated_time,participants,messages.limit(20){id,message,created_time,from,attachments}", limit: 25 }
   });
   const out = [];
   for (const c of res.data ?? []) {
@@ -141,7 +96,7 @@ async function syncDirect(ch, cred, platform, selfId, firstSync, signal) {
         body: bodyOf(m.message, att),
         createdAt: new Date(m.created_time),
         inbound: !!m.from && m.from.id !== selfId && m.from.id !== cred.pageId,
-        attachments: att,
+        attachments: att
       };
     });
     out.push(
@@ -151,11 +106,11 @@ async function syncDirect(ch, cred, platform, selfId, firstSync, signal) {
           externalId: c.id,
           source: platform === "messenger" ? "messenger" : "direct",
           customerName: customer?.name ?? (customer?.username ? `@${customer.username}` : "Khách hàng"),
-          customerExternalId: customer?.id ?? null,
+          customerExternalId: customer?.id ?? null
         },
         items,
-        firstSync,
-      ),
+        firstSync
+      )
     );
   }
   return out;
@@ -172,26 +127,17 @@ function commentThreads(ch, posts, isSelf, firstSync) {
         body: bodyOf(c.message ?? c.text, []),
         createdAt: new Date(c.created_time ?? c.timestamp ?? Date.now()),
         inbound: !isSelf(c),
-        attachments: [],
+        attachments: []
       });
-      const thread = [top, ...(top.comments?.data ?? []), ...(top.replies?.data ?? [])].map(toItem);
-      const name =
-        top.from?.name ??
-        (top.from?.username ? `@${top.from.username}` : top.username ? `@${top.username}` : "Người dùng Facebook");
+      const thread = [top, ...top.comments?.data ?? [], ...top.replies?.data ?? []].map(toItem);
+      const name = top.from?.name ?? (top.from?.username ? `@${top.from.username}` : top.username ? `@${top.username}` : "Người dùng Facebook");
       out.push(
         ...upsertThread(
           ch,
-          {
-            externalId: top.id,
-            source: "comment",
-            customerName: name,
-            customerExternalId: top.from?.id ?? null,
-            contextPostId: post.id,
-            contextPostTitle: title,
-          },
+          { externalId: top.id, source: "comment", customerName: name, customerExternalId: top.from?.id ?? null, contextPostId: post.id, contextPostTitle: title },
           thread,
-          firstSync,
-        ),
+          firstSync
+        )
       );
     }
   }
@@ -203,10 +149,9 @@ async function syncFbComments(ch, cred, firstSync, signal) {
     token: cred.token,
     signal,
     query: {
-      fields:
-        "id,message,comments.limit(25).filter(toplevel).order(reverse_chronological){id,message,created_time,from{id,name},comments.limit(25){id,message,created_time,from{id,name}}}",
-      limit: 10,
-    },
+      fields: "id,message,comments.limit(25).filter(toplevel).order(reverse_chronological){id,message,created_time,from{id,name},comments.limit(25){id,message,created_time,from{id,name}}}",
+      limit: 10
+    }
   });
   return commentThreads(ch, res.data ?? [], (c) => c.from?.id === cred.pageId, firstSync);
 }
@@ -215,20 +160,10 @@ async function syncIgComments(ch, cred, firstSync, signal) {
   const res = await graph("GET", `${cred.igUserId}/media`, {
     token: cred.token,
     signal,
-    query: {
-      fields:
-        "id,caption,comments.limit(25){id,text,timestamp,username,from{id,username},replies.limit(25){id,text,timestamp,username,from{id,username}}}",
-      limit: 10,
-    },
+    query: { fields: "id,caption,comments.limit(25){id,text,timestamp,username,from{id,username},replies.limit(25){id,text,timestamp,username,from{id,username}}}", limit: 10 }
   });
   const handle = (ch.handle ?? "").replace(/^@/, "").toLowerCase();
-  return commentThreads(
-    ch,
-    res.data ?? [],
-    (c) =>
-      c.from?.id === cred.igUserId || (!!handle && (c.username ?? c.from?.username ?? "").toLowerCase() === handle),
-    firstSync,
-  );
+  return commentThreads(ch, res.data ?? [], (c) => c.from?.id === cred.igUserId || !!handle && (c.username ?? c.from?.username ?? "").toLowerCase() === handle, firstSync);
 }
 
 async function syncYoutubeComments(ch, cred, firstSync, signal) {
@@ -243,7 +178,7 @@ async function syncYoutubeComments(ch, cred, firstSync, signal) {
       body: c.text.trim() || "[Bình luận trống]",
       createdAt: new Date(c.publishedAt),
       inbound: c.authorChannelId !== own,
-      attachments: [],
+      attachments: []
     });
     out.push(
       ...upsertThread(
@@ -254,11 +189,11 @@ async function syncYoutubeComments(ch, cred, firstSync, signal) {
           customerName: t.top.author,
           customerExternalId: t.top.authorChannelId,
           contextPostId: t.videoId,
-          contextPostTitle: t.videoTitle ?? (t.videoId ? `Video ${t.videoId}` : "Video YouTube"),
+          contextPostTitle: t.videoTitle ?? (t.videoId ? `Video ${t.videoId}` : "Video YouTube")
         },
         [t.top, ...t.replies].map(toItem),
-        firstSync,
-      ),
+        firstSync
+      )
     );
   }
   return out;
@@ -276,7 +211,7 @@ export async function syncChannel(ch, signal, scope = "all") {
   const run = async (label, fn) => {
     attempted++;
     try {
-      added.push(...(await fn()));
+      added.push(...await fn());
     } catch (err) {
       if (signal.aborted) throw err;
       if (err instanceof PublishError && err.kind === "rate_limit") rateLimited = true;
@@ -294,11 +229,6 @@ export async function syncChannel(ch, signal, scope = "all") {
     if (withComments) await run("Bình luận IG", () => syncIgComments(ch, cred, firstSync, signal));
   } else return { added: [], errors: [], rateLimited: false };
   const allFailed = errors.length === attempted;
-  if (!(firstSync && allFailed))
-    saveState(ch.id, {
-      at: Date.now(),
-      ok: !errors.length,
-      ...(errors.length ? { error: errors.join(" · ").slice(0, 400) } : {}),
-    });
+  if (!(firstSync && allFailed)) saveState(ch.id, { at: Date.now(), ok: !errors.length, ...errors.length ? { error: errors.join(" · ").slice(0, 400) } : {} });
   return { added, errors, rateLimited };
 }

@@ -42,54 +42,38 @@ export function applyRules(items) {
     if (Date.now() - msg.createdAt.getTime() > FRESH_MS) continue;
     const comment = conv.source === "comment";
     for (const rule of rules) {
-      if (
-        rule.channelId
-          ? rule.channelId !== conv.channelId
-          : rule.workspaceId != null && rule.workspaceId !== conv.workspaceId
-      )
-        continue;
+      if (rule.channelId ? rule.channelId !== conv.channelId : rule.workspaceId != null && rule.workspaceId !== conv.workspaceId) continue;
       if ((rule.action === "reply_comment" || rule.action === "hide_comment") && !comment) continue;
       if (conv.platform === "tiktok") continue;
       if (conv.platform === "youtube" && rule.action !== "reply_comment" && rule.action !== "hide_comment") continue;
       if (!matchRule(rule, msg.body)) continue;
       if (rule.action !== "hide_comment" && !rule.template?.trim()) continue;
-      const recent = db
-        .select({ id: messages.id })
-        .from(messages)
-        .where(
-          and(
-            eq(messages.conversationId, conv.id),
-            eq(messages.ruleId, rule.id),
-            or(gte(messages.createdAt, new Date(Date.now() - COOLDOWN_MS)), isNull(messages.externalId)),
-          ),
+      const recent = db.select({ id: messages.id }).from(messages).where(
+        and(
+          eq(messages.conversationId, conv.id),
+          eq(messages.ruleId, rule.id),
+          or(gte(messages.createdAt, new Date(Date.now() - COOLDOWN_MS)), isNull(messages.externalId))
         )
-        .get();
+      ).get();
       if (recent && rule.action !== "hide_comment") continue;
       const lo = Math.max(0, rule.minDelaySec);
       const hi = Math.max(lo, rule.maxDelaySec);
       const delaySec = rule.action === "hide_comment" ? 2 : lo + Math.random() * (hi - lo);
-      db.insert(messages)
-        .values({
-          id: newId(),
-          conversationId: conv.id,
-          direction: "out",
-          author: rule.action === "hide_comment" ? "system" : "bot",
-          body:
-            rule.action === "hide_comment"
-              ? `Ẩn bình luận: "${msg.body.slice(0, 80)}" (luật "${rule.name}")`
-              : fill(rule.template, conv.customerName),
-          action: rule.action === "hide_comment" ? "hide" : "message",
-          // Trả lời / ẩn đúng bình luận vừa đến; nhắn riêng từ bình luận dùng private reply theo comment_id
-          targetId: comment ? msg.externalId : null,
-          ruleId: rule.id,
-          deliveryStatus: "pending",
-          sendAfter: new Date(Date.now() + delaySec * 1e3),
-        })
-        .run();
+      db.insert(messages).values({
+        id: newId(),
+        conversationId: conv.id,
+        direction: "out",
+        author: rule.action === "hide_comment" ? "system" : "bot",
+        body: rule.action === "hide_comment" ? `Ẩn bình luận: "${msg.body.slice(0, 80)}" (luật "${rule.name}")` : fill(rule.template, conv.customerName),
+        action: rule.action === "hide_comment" ? "hide" : "message",
+        // Trả lời / ẩn đúng bình luận vừa đến; nhắn riêng từ bình luận dùng private reply theo comment_id
+        targetId: comment ? msg.externalId : null,
+        ruleId: rule.id,
+        deliveryStatus: "pending",
+        sendAfter: new Date(Date.now() + delaySec * 1e3)
+      }).run();
       queued++;
-      console.info(
-        `[inbox] luật "${rule.name}" → ${rule.action} sau ${Math.round(delaySec)}s (hội thoại ${conv.id.slice(0, 8)})`,
-      );
+      console.info(`[inbox] luật "${rule.name}" → ${rule.action} sau ${Math.round(delaySec)}s (hội thoại ${conv.id.slice(0, 8)})`);
     }
   }
   return queued;

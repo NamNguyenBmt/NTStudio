@@ -1,6 +1,8 @@
 import { currentUser } from "../../paths";
 import { CloudError, cloud, readCloudSession } from "../../cloud/client";
 import { AiError } from "../providers";
+import "./misc";
+import "./openai";
 
 export const OMNIRA_AI_LABEL = "AI Omnira";
 
@@ -24,7 +26,7 @@ const KIND = {
   RATE_LIMITED: "rate_limit",
   AI_REFUSED: "refusal",
   AI_TOO_LONG: "bad_request",
-  AI_TRUNCATED: "invalid_output",
+  AI_TRUNCATED: "invalid_output"
 };
 
 export async function omniraChat(req) {
@@ -37,23 +39,16 @@ export async function omniraChat(req) {
         json: !!req.json,
         maxTokens: req.maxTokens,
         temperature: req.temperature ?? null,
-        ...(req.images?.length ? { images: req.images } : {}),
+        ...req.images?.length ? { images: req.images } : {}
       },
       token: token(),
       // Câu trả lời dài (kế hoạch nhiều ngày, kịch bản dài) có thể mất vài phút
-      timeoutMs: 3e5,
+      timeoutMs: 3e5
     });
-    return {
-      text: r.text,
-      model: r.model,
-      inputTokens: r.inputTokens,
-      outputTokens: r.outputTokens,
-      imagesSeen: r.imagesSeen ?? 0,
-    };
+    return { text: r.text, model: r.model, inputTokens: r.inputTokens, outputTokens: r.outputTokens, imagesSeen: r.imagesSeen ?? 0 };
   } catch (err) {
     if (err instanceof AiError) throw err;
-    if (err instanceof CloudError)
-      throw new AiError(err.offline ? "network" : (KIND[err.code] ?? "unknown"), err.message, err.status || void 0);
+    if (err instanceof CloudError) throw new AiError(err.offline ? "network" : KIND[err.code] ?? "unknown", err.message, err.status || void 0);
     throw new AiError("unknown", err instanceof Error ? err.message : String(err));
   }
 }

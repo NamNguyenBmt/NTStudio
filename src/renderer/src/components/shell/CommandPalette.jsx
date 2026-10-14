@@ -5,8 +5,14 @@ import { navItems } from "../../app/nav";
 import { cn } from "../../lib/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { Kbd } from "../ui/Kbd";
+import "../ui/KpiTile";
+import "../PlatformBadge";
+import "../ui/Progress";
+import "../ui/SegmentedControl";
+import "../ui/StatusDot";
+import "../ui/toast";
+import "../../stores/system";
 import { useUiStore } from "../../stores/ui";
-import { normalize } from "../../lib/media";
 
 export function CommandPalette() {
   const open = useUiStore((s) => s.commandOpen);
@@ -24,18 +30,11 @@ export function CommandPalette() {
         group: "Điều hướng",
         icon: n.icon,
         shortcut: n.shortcut,
-        run: () => navigate(n.path),
+        run: () => navigate(n.path)
       })),
-      {
-        id: "ui:rail",
-        label: "Thu gọn / mở rộng thanh điều hướng",
-        group: "Giao diện",
-        icon: PanelLeft,
-        shortcut: "Ctrl+B",
-        run: toggleRail,
-      },
+      { id: "ui:rail", label: "Thu gọn / mở rộng thanh điều hướng", group: "Giao diện", icon: PanelLeft, shortcut: "Ctrl+B", run: toggleRail }
     ],
-    [navigate, toggleRail],
+    [navigate, toggleRail]
   );
   const results = useMemo(() => {
     const q = normalize(query.trim());
@@ -68,71 +67,65 @@ export function CommandPalette() {
       setOpen(false);
     }
   };
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[100] flex items-start justify-center bg-black/40 pt-[12vh]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.12 }}
-          onMouseDown={() => setOpen(false)}
-        >
-          <motion.div
-            role="dialog"
-            aria-label="Bảng lệnh"
-            initial={{ y: -8, scale: 0.98 }}
-            animate={{ y: 0, scale: 1 }}
-            exit={{ y: -8, scale: 0.98 }}
-            transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="w-[560px] overflow-hidden rounded-2xl bg-surface shadow-modal"
-          >
-            <div className="flex items-center gap-space-sm border-b border-overlay/[0.06] px-space-md">
-              <Search size={16} className="text-on-surface-variant" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="Gõ lệnh hoặc tên trang..."
-                className="h-11 flex-1 bg-transparent text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus-visible:ring-0"
-              />
-              <Kbd>Esc</Kbd>
-            </div>
-            <ul className="scroll-thin max-h-[360px] overflow-y-auto p-1">
-              {results.length === 0 && (
-                <li className="px-space-md py-space-lg text-center text-body-sm text-on-surface-variant">
-                  Không tìm thấy lệnh phù hợp
-                </li>
+  return <AnimatePresence>
+    {open && <motion.div
+      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/40 pt-[12vh]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12 }}
+      onMouseDown={() => setOpen(false)}
+    >
+      <motion.div
+        role="dialog"
+        aria-label="Bảng lệnh"
+        initial={{ y: -8, scale: 0.98 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: -8, scale: 0.98 }}
+        transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="w-[560px] overflow-hidden rounded-2xl bg-surface shadow-modal"
+      >
+        <div className="flex items-center gap-space-sm border-b border-overlay/[0.06] px-space-md">
+          <Search size={16} className="text-on-surface-variant" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Gõ lệnh hoặc tên trang..."
+            className="h-11 flex-1 bg-transparent text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus-visible:ring-0"
+          />
+          <Kbd>Esc</Kbd>
+        </div>
+        <ul className="scroll-thin max-h-[360px] overflow-y-auto p-1">
+          {results.length === 0 && <li className="px-space-md py-space-lg text-center text-body-sm text-on-surface-variant">
+            Không tìm thấy lệnh phù hợp
+          </li>}
+          {results.map((cmd, i) => <li key={cmd.id}>
+            <button
+              type="button"
+              onMouseEnter={() => setCursor(i)}
+              onClick={() => exec(cmd)}
+              className={cn(
+                "relative flex h-9 w-full items-center gap-space-md rounded px-space-md text-left text-body-sm text-on-surface-variant",
+                i === cursor && "bg-overlay/[0.06] text-on-surface"
               )}
-              {results.map((cmd, i) => (
-                <li key={cmd.id}>
-                  <button
-                    type="button"
-                    onMouseEnter={() => setCursor(i)}
-                    onClick={() => exec(cmd)}
-                    className={cn(
-                      "relative flex h-9 w-full items-center gap-space-md rounded px-space-md text-left text-body-sm text-on-surface-variant",
-                      i === cursor && "bg-overlay/[0.06] text-on-surface",
-                    )}
-                  >
-                    {i === cursor && (
-                      <span className="absolute left-0 top-2 h-5 w-[3px] rounded-full bg-primary-container" />
-                    )}
-                    <cmd.icon size={16} strokeWidth={1.75} />
-                    <span className="flex-1 truncate">{cmd.label}</span>
-                    <span className="text-label-sm text-outline">{cmd.group}</span>
-                    {cmd.shortcut && <Kbd>{cmd.shortcut}</Kbd>}
-                    {i === cursor && <CornerDownLeft size={14} className="text-outline" />}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+            >
+              {i === cursor && <span className="absolute left-0 top-2 h-5 w-[3px] rounded-full bg-primary-container" />}
+              <cmd.icon size={16} strokeWidth={1.75} />
+              <span className="flex-1 truncate">{cmd.label}</span>
+              <span className="text-label-sm text-outline">{cmd.group}</span>
+              {cmd.shortcut && <Kbd>{cmd.shortcut}</Kbd>}
+              {i === cursor && <CornerDownLeft size={14} className="text-outline" />}
+            </button>
+          </li>)}
+        </ul>
+      </motion.div>
+    </motion.div>}
+  </AnimatePresence>;
+}
+
+function normalize(s) {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
 }

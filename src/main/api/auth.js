@@ -1,28 +1,14 @@
-import { vaultAvailable, writePortableKey, recoverVaultOnThisMachine } from "../vault";
 import { toAuthUser, activeUser, hasLegacyData, adoptLegacyData, openSession, closeSession } from "../auth/session";
 import { ApiError } from "../errors";
+import { vaultAvailable, writePortableKey, recoverVaultOnThisMachine } from "../vault";
 import { CLOUD_URL, CloudError, cloud, readCloudSession, writeCloudSession, clearCloudSession } from "../cloud/client";
 import { verifyLicenseToken, licenseView, activateLicense, refreshLicense, deactivateLicense } from "../license/index";
-import {
-  readStore,
-  writeStore,
-  findUser,
-  updateUser,
-  hashPassword,
-  verifyPassword,
-  createUser,
-  rememberSession,
-  forgetSession,
-  lockRemainingSec,
-  recordFailure,
-  clearFailures,
-} from "../auth/store";
+import { readStore, writeStore, findUser, updateUser, hashPassword, verifyPassword, createUser, rememberSession, forgetSession, lockRemainingSec, recordFailure, clearFailures } from "../auth/store";
 
 const hasUsers = () => readStore().users.length > 0;
 let dummyHash = null;
 let pendingRegister = null;
 const PENDING_TTL_MS = 24 * 36e5;
-
 const toPending = (r) => ({ email: r.email, expiresInSeconds: r.expiresInSeconds, resendInSeconds: r.resendInSeconds });
 
 function saveLastEmail(email) {
@@ -48,28 +34,15 @@ async function linkLocal(customer, password) {
   const byEmail = findUser(customer.email);
   let user = byCloud ?? byEmail;
   if (user && !byCloud) {
-    if (user.cloudId && user.cloudId !== customer.id)
-      throw new ApiError("CONFLICT", "Email này trên máy đang gắn với tài khoản Omnira khác");
-    if (!(await verifyPassword(password, user.passwordHash)))
+    if (user.cloudId && user.cloudId !== customer.id) throw new ApiError("CONFLICT", "Email này trên máy đang gắn với tài khoản Omnira khác");
+    if (!await verifyPassword(password, user.passwordHash))
       throw new ApiError(
         "AUTH",
-        "Máy này đã có dữ liệu của tài khoản cùng email nhưng mật khẩu khác. Để liên kết và giữ dữ liệu: đổi mật khẩu tài khoản Omnira cho giống mật khẩu cũ trên máy, đăng nhập, rồi đổi lại sau.",
+        "Máy này đã có dữ liệu của tài khoản cùng email nhưng mật khẩu khác. Để liên kết và giữ dữ liệu: đổi mật khẩu tài khoản Omnira cho giống mật khẩu cũ trên máy, đăng nhập, rồi đổi lại sau."
       );
   }
-  if (!user)
-    return createUser({
-      email: customer.email,
-      displayName: customer.fullName,
-      password,
-      provider: "cloud",
-      cloudId: customer.id,
-    });
-  return updateUser(user.id, {
-    provider: "cloud",
-    cloudId: customer.id,
-    displayName: customer.fullName,
-    passwordHash: await hashPassword(password),
-  });
+  if (!user) return createUser({ email: customer.email, displayName: customer.fullName, password, provider: "cloud", cloudId: customer.id });
+  return updateUser(user.id, { provider: "cloud", cloudId: customer.id, displayName: customer.fullName, passwordHash: await hashPassword(password) });
 }
 
 function start(user, remember, password) {
@@ -77,18 +50,12 @@ function start(user, remember, password) {
     recoverVaultOnThisMachine(user.id, password);
   } catch (err) {
     console.error("[vault] không mở được khóa di chuyển", err);
-    throw new ApiError(
-      "INTERNAL",
-      "Không mở được két bảo mật của dữ liệu này trên máy mới (khóa di chuyển không khớp). API key / token cần nhập lại.",
-    );
+    throw new ApiError("INTERNAL", "Không mở được két bảo mật của dữ liệu này trên máy mới (khóa di chuyển không khớp). API key / token cần nhập lại.");
   }
   try {
     openSession(user);
   } catch (err) {
-    throw new ApiError(
-      "INTERNAL",
-      `Không mở được dữ liệu của tài khoản: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    throw new ApiError("INTERNAL", `Không mở được dữ liệu của tài khoản: ${err instanceof Error ? err.message : String(err)}`);
   }
   try {
     writePortableKey(user.id, password);
@@ -101,19 +68,14 @@ function start(user, remember, password) {
 }
 
 async function startCloud(auth, password, remember, adoptLegacy = false) {
-  const isNew = !readStore().users.some(
-    (u) => u.cloudId === auth.customer.id || u.email === auth.customer.email.toLowerCase(),
-  );
+  const isNew = !readStore().users.some((u) => u.cloudId === auth.customer.id || u.email === auth.customer.email.toLowerCase());
   const user = await linkLocal(auth.customer, password);
   if (isNew && adoptLegacy && hasLegacyData()) {
     try {
       adoptLegacyData(user.id);
     } catch (err) {
       console.error("[auth] chuyển dữ liệu cũ lỗi", err);
-      throw new ApiError(
-        "INTERNAL",
-        `Đã tạo tài khoản nhưng không chuyển được dữ liệu cũ: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      throw new ApiError("INTERNAL", `Đã tạo tài khoản nhưng không chuyển được dữ liệu cũ: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   const prev = readCloudSession(user.id);
@@ -123,7 +85,7 @@ async function startCloud(auth, password, remember, adoptLegacy = false) {
     customerToken: auth.token,
     // Token license cũ chỉ còn giá trị nếu cùng tài khoản cloud
     licenseToken: prev?.customerId === auth.customer.id ? prev.licenseToken : null,
-    updatedAt: Date.now(),
+    updatedAt: Date.now()
   });
   start(user, remember, password);
   if ((await refreshLicense()).status === "revoked") await activateLicense();
@@ -148,7 +110,7 @@ export const authHandlers = {
       lastEmail: readStore().lastEmail ?? null,
       vaultAvailable: vaultAvailable(),
       license: u ? licenseView() : null,
-      cloudUrl: CLOUD_URL,
+      cloudUrl: CLOUD_URL
     };
   },
   "auth.register": async ({ email, displayName, password, phone, referralCode, remember, adoptLegacy }) => {
@@ -156,7 +118,7 @@ export const authHandlers = {
     try {
       r = await cloud("/api/client/v1/auth/register", {
         method: "POST",
-        body: { email, password, fullName: displayName, phone: phone || null, referralCode: referralCode || null },
+        body: { email, password, fullName: displayName, phone: phone || null, referralCode: referralCode || null }
       });
     } catch (e) {
       throw toApiError(e);
@@ -212,9 +174,7 @@ export const authHandlers = {
       if (e instanceof CloudError && e.offline) {
         const user = findUser(email);
         dummyHash ??= hashPassword("omnipage-dummy-password");
-        const ok = user
-          ? await verifyPassword(password, user.passwordHash)
-          : (await verifyPassword(password, await dummyHash), false);
+        const ok = user ? await verifyPassword(password, user.passwordHash) : (await verifyPassword(password, await dummyHash), false);
         if (!user || !ok) {
           recordFailure(email);
           throw new ApiError("AUTH", "Không kết nối được Omnira Cloud và mật khẩu không khớp mật khẩu đã lưu trên máy");
@@ -244,20 +204,12 @@ export const authHandlers = {
     const u = activeUser();
     if (!u) throw new ApiError("AUTH", "Chưa đăng nhập");
     try {
-      await cloud("/api/client/v1/me/password", {
-        method: "POST",
-        body: { currentPassword, newPassword },
-        token: cloudToken(),
-      });
+      await cloud("/api/client/v1/me/password", { method: "POST", body: { currentPassword, newPassword }, token: cloudToken() });
     } catch (e) {
       throw toApiError(e);
     }
     const remembered = !!u.rememberTokenHash;
-    updateUser(u.id, {
-      passwordHash: await hashPassword(newPassword),
-      rememberTokenHash: null,
-      rememberExpiresAt: null,
-    });
+    updateUser(u.id, { passwordHash: await hashPassword(newPassword), rememberTokenHash: null, rememberExpiresAt: null });
     try {
       writePortableKey(u.id, newPassword);
     } catch (err) {
@@ -272,11 +224,7 @@ export const authHandlers = {
     try {
       const token = cloudToken();
       const me = await cloud("/api/client/v1/me", { token });
-      await cloud("/api/client/v1/me", {
-        method: "PUT",
-        body: { fullName: displayName.trim(), phone: me.customer.phone, company: me.customer.company },
-        token,
-      });
+      await cloud("/api/client/v1/me", { method: "PUT", body: { fullName: displayName.trim(), phone: me.customer.phone, company: me.customer.company }, token });
     } catch (e) {
       throw toApiError(e);
     }
@@ -290,5 +238,5 @@ export const authHandlers = {
     } catch (e) {
       throw toApiError(e);
     }
-  },
+  }
 };

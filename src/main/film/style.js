@@ -1,18 +1,15 @@
-import { filmStyleKeywords } from "../ai/film-prompts";
-import { FILM_GENRES, FILM_STYLES } from "../../shared/film";
+import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { filmProjects } from "../db/schema";
 import { getDb } from "../db/index";
-import { createHash } from "node:crypto";
 import { AiError } from "../ai/providers";
+import { filmStyleKeywords } from "../ai/film-prompts";
+import { FILM_GENRES, FILM_STYLES } from "../../shared/film";
 
 const norm = (s) => (s ?? "").trim();
 
 export function styleKey(i) {
-  return createHash("sha256")
-    .update([norm(i.genre), norm(i.visualStyle), norm(i.notes)].join("|"))
-    .digest("hex")
-    .slice(0, 16);
+  return createHash("sha256").update([norm(i.genre), norm(i.visualStyle), norm(i.notes)].join("|")).digest("hex").slice(0, 16);
 }
 
 export const hasStyleInput = (i) => !!(norm(i.genre) || norm(i.visualStyle) || norm(i.notes));
@@ -29,13 +26,8 @@ export async function composeStyleEn(i, workspaceId) {
     try {
       parts.push(await filmStyleKeywords(custom.join("\n"), parts.join(", "), workspaceId));
     } catch (err) {
-      if (!(err instanceof AiError) || (err.kind !== "no_provider" && err.kind !== "quota")) throw err;
-      parts.push(
-        ...[
-          norm(i.genre) && !genre ? norm(i.genre) : "",
-          norm(i.visualStyle) && !style ? norm(i.visualStyle) : "",
-        ].filter(Boolean),
-      );
+      if (!(err instanceof AiError) || err.kind !== "no_provider" && err.kind !== "quota") throw err;
+      parts.push(...[norm(i.genre) && !genre ? norm(i.genre) : "", norm(i.visualStyle) && !style ? norm(i.visualStyle) : ""].filter(Boolean));
     }
   }
   return parts.filter(Boolean).join(", ");

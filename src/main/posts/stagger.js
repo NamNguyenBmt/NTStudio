@@ -4,7 +4,6 @@ import { getDb } from "../db/index";
 
 const KEY = "posts.stagger";
 const MIN = 6e4;
-
 const DEFAULT_STAGGER = { enabled: true, minMinutes: 5, maxMinutes: 25 };
 
 export function staggerPrefs(db = getDb()) {
@@ -15,11 +14,7 @@ export function staggerPrefs(db = getDb()) {
 export function setStaggerPrefs(p) {
   const next = { ...staggerPrefs(), ...p };
   if (next.maxMinutes < next.minMinutes) next.maxMinutes = next.minMinutes;
-  getDb()
-    .insert(settings)
-    .values({ key: KEY, value: next })
-    .onConflictDoUpdate({ target: settings.key, set: { value: next, updatedAt: new Date() } })
-    .run();
+  getDb().insert(settings).values({ key: KEY, value: next }).onConflictDoUpdate({ target: settings.key, set: { value: next, updatedAt: new Date() } }).run();
   return next;
 }
 
@@ -37,16 +32,7 @@ export function staggerTime(at, others, prefs, rand = Math.random) {
 }
 
 export function queuedTimesNear(db, at, excludeId) {
-  const where = [
-    eq(scheduledPosts.status, "queued"),
-    gte(scheduledPosts.scheduledAt, new Date(at - 2 * 36e5)),
-    lte(scheduledPosts.scheduledAt, new Date(at + 48 * 36e5)),
-  ];
+  const where = [eq(scheduledPosts.status, "queued"), gte(scheduledPosts.scheduledAt, new Date(at - 2 * 36e5)), lte(scheduledPosts.scheduledAt, new Date(at + 48 * 36e5))];
   if (excludeId) where.push(ne(scheduledPosts.id, excludeId));
-  return db
-    .select({ at: scheduledPosts.scheduledAt })
-    .from(scheduledPosts)
-    .where(and(...where))
-    .all()
-    .map((r) => r.at.getTime());
+  return db.select({ at: scheduledPosts.scheduledAt }).from(scheduledPosts).where(and(...where)).all().map((r) => r.at.getTime());
 }

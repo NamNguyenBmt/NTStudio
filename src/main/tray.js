@@ -22,14 +22,13 @@ export function backgroundPrefs() {
     closeToTray: load().closeToTray,
     // Bản dev chạy electron.exe – không đăng ký khởi động cùng Windows
     launchAtLoginSupported: app.isPackaged && process.platform !== "linux",
-    launchAtLogin: app.isPackaged && app.getLoginItemSettings({ args: [HIDDEN_ARG] }).openAtLogin,
+    launchAtLogin: app.isPackaged && app.getLoginItemSettings({ args: [HIDDEN_ARG] }).openAtLogin
   };
 }
 
 export function setBackgroundPrefs(p) {
   if (p.closeToTray != null) save({ closeToTray: p.closeToTray });
-  if (p.launchAtLogin != null && app.isPackaged)
-    app.setLoginItemSettings({ openAtLogin: p.launchAtLogin, args: [HIDDEN_ARG] });
+  if (p.launchAtLogin != null && app.isPackaged) app.setLoginItemSettings({ openAtLogin: p.launchAtLogin, args: [HIDDEN_ARG] });
   refreshMenu();
   return backgroundPrefs();
 }
@@ -64,22 +63,17 @@ function refreshMenu() {
     Menu.buildFromTemplate([
       { label: "Mở Omnira Studio", click: showWindow },
       { type: "separator" },
-      {
-        label: "Chạy nền khi đóng cửa sổ",
-        type: "checkbox",
-        checked: p.closeToTray,
-        click: (i) => setBackgroundPrefs({ closeToTray: i.checked }),
-      },
+      { label: "Chạy nền khi đóng cửa sổ", type: "checkbox", checked: p.closeToTray, click: (i) => setBackgroundPrefs({ closeToTray: i.checked }) },
       {
         label: "Khởi động cùng Windows (ẩn dưới khay)",
         type: "checkbox",
         checked: p.launchAtLogin,
         enabled: p.launchAtLoginSupported,
-        click: (i) => setBackgroundPrefs({ launchAtLogin: i.checked }),
+        click: (i) => setBackgroundPrefs({ launchAtLogin: i.checked })
       },
       { type: "separator" },
-      { label: "Thoát hẳn (dừng lập lịch đăng bài)", click: quit },
-    ]),
+      { label: "Thoát hẳn (dừng lập lịch đăng bài)", click: quit }
+    ])
   );
 }
 
@@ -105,7 +99,7 @@ export function hideOnClose(w) {
       save({ hintShown: true });
       const n = new Notification({
         title: "Omnira Studio vẫn đang chạy nền",
-        body: "Lập lịch đăng bài và hộp thư vẫn hoạt động. Mở lại hoặc thoát hẳn từ biểu tượng ở khay hệ thống (góc phải thanh taskbar).",
+        body: "Lập lịch đăng bài và hộp thư vẫn hoạt động. Mở lại hoặc thoát hẳn từ biểu tượng ở khay hệ thống (góc phải thanh taskbar)."
       });
       n.on("click", showWindow);
       n.show();

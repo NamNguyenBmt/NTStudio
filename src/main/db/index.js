@@ -1,11 +1,11 @@
-import * as schema from "./schema";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { app } from "electron";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { userDir } from "../paths";
+import * as schema from "./schema";
 
 let sqlite = null;
 let db = null;

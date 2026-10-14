@@ -8,8 +8,7 @@ import { mediaDir } from "../media/paths";
 import { segmentsDir } from "../media/render";
 import { byWorkspace } from "./accounts";
 
-const okImage = (p) =>
-  !!p && /^(uploads|cache\/ai|series\/[\w-]+)\/[\w.-]+$/.test(p) && existsSync(join(mediaDir(), p));
+const okImage = (p) => !!p && /^(uploads|cache\/ai|series\/[\w-]+)\/[\w.-]+$/.test(p) && existsSync(join(mediaDir(), p));
 
 function checkRefs(list) {
   if (!list) return void 0;
@@ -20,20 +19,9 @@ function checkRefs(list) {
 
 function characterRefsOf(projectId) {
   const db = getDb();
-  const ep = db
-    .select({ seriesId: seriesEpisodes.seriesId })
-    .from(seriesEpisodes)
-    .where(eq(seriesEpisodes.projectId, projectId))
-    .get();
+  const ep = db.select({ seriesId: seriesEpisodes.seriesId }).from(seriesEpisodes).where(eq(seriesEpisodes.projectId, projectId)).get();
   if (!ep) return [];
-  return db
-    .select()
-    .from(seriesCharacters)
-    .where(eq(seriesCharacters.seriesId, ep.seriesId))
-    .orderBy(asc(seriesCharacters.sortOrder))
-    .all()
-    .filter((c) => okImage(c.referenceImage))
-    .map((c) => ({ id: c.id, name: c.name, image: c.referenceImage }));
+  return db.select().from(seriesCharacters).where(eq(seriesCharacters.seriesId, ep.seriesId)).orderBy(asc(seriesCharacters.sortOrder)).all().filter((c) => okImage(c.referenceImage)).map((c) => ({ id: c.id, name: c.name, image: c.referenceImage }));
 }
 
 export const studioHandlers = {
@@ -45,31 +33,12 @@ export const studioHandlers = {
     const db = getDb();
     const p = db.select().from(videoProjects).where(eq(videoProjects.id, id)).get();
     if (!p) throw notFound("dự án video");
-    const scenes = db
-      .select()
-      .from(videoScenes)
-      .where(eq(videoScenes.projectId, id))
-      .orderBy(asc(videoScenes.position))
-      .all();
-    const ep = db
-      .select({ seriesId: seriesEpisodes.seriesId })
-      .from(seriesEpisodes)
-      .where(eq(seriesEpisodes.projectId, id))
-      .get();
+    const scenes = db.select().from(videoScenes).where(eq(videoScenes.projectId, id)).orderBy(asc(videoScenes.position)).all();
+    const ep = db.select({ seriesId: seriesEpisodes.seriesId }).from(seriesEpisodes).where(eq(seriesEpisodes.projectId, id)).get();
     const s = ep ? db.select().from(series).where(eq(series.id, ep.seriesId)).get() : void 0;
-    const chars = ep
-      ? db
-          .select()
-          .from(seriesCharacters)
-          .where(eq(seriesCharacters.seriesId, ep.seriesId))
-          .orderBy(asc(seriesCharacters.sortOrder))
-          .all()
-      : [];
+    const chars = ep ? db.select().from(seriesCharacters).where(eq(seriesCharacters.seriesId, ep.seriesId)).orderBy(asc(seriesCharacters.sortOrder)).all() : [];
     const styles = [s?.visualStyleEn, s?.visualStyle].filter((x) => !!x?.trim());
-    const looks = chars.map((c) => ({
-      c,
-      segs: [c.appearanceEn, c.appearance].filter((x) => !!x?.trim()).map((a) => `${c.name}: ${a}`),
-    }));
+    const looks = chars.map((c) => ({ c, segs: [c.appearanceEn, c.appearance].filter((x) => !!x?.trim()).map((a) => `${c.name}: ${a}`) }));
     let t = 0;
     return {
       title: p.topic,
@@ -92,14 +61,11 @@ export const studioHandlers = {
           for (const { c, segs } of looks)
             for (const seg of segs)
               if (visual.includes(seg)) {
-                visual = visual
-                  .replace(seg, "")
-                  .replace(/^\.\s*/, "")
-                  .replace(/\.\s*\./g, ".");
+                visual = visual.replace(seg, "").replace(/^\.\s*/, "").replace(/\.\s*\./g, ".");
                 if (!present.includes(c.name)) present.push(c.name);
               }
         }
-        const speaker = x.speakerId ? (chars.find((c) => c.id === x.speakerId)?.name ?? null) : null;
+        const speaker = x.speakerId ? chars.find((c) => c.id === x.speakerId)?.name ?? null : null;
         if (speaker && !present.includes(speaker)) present.push(speaker);
         const out = {
           index,
@@ -109,90 +75,45 @@ export const studioHandlers = {
           speaker,
           line: x.voiceover,
           visual: visual.trim().replace(/^\.\s*/, ""),
-          present,
+          present
         };
         t += x.durationSec;
         return out;
-      }),
+      })
     };
   },
   "studio.projects": ({ workspaceId }) => {
     const db = getDb();
     const stats = new Map(
-      db
-        .select({ projectId: videoScenes.projectId, n: count(), total: sum(videoScenes.durationSec).mapWith(Number) })
-        .from(videoScenes)
-        .groupBy(videoScenes.projectId)
-        .all()
-        .map((r) => [r.projectId, r]),
+      db.select({ projectId: videoScenes.projectId, n: count(), total: sum(videoScenes.durationSec).mapWith(Number) }).from(videoScenes).groupBy(videoScenes.projectId).all().map((r) => [r.projectId, r])
     );
-    return db
-      .select()
-      .from(videoProjects)
-      .where(byWorkspace(videoProjects.workspaceId, workspaceId))
-      .orderBy(desc(videoProjects.updatedAt))
-      .all()
-      .map((p) => ({
-        ...p,
-        sceneCount: stats.get(p.id)?.n ?? 0,
-        totalDurationSec: Math.round((stats.get(p.id)?.total ?? 0) * 10) / 10,
-      }));
+    return db.select().from(videoProjects).where(byWorkspace(videoProjects.workspaceId, workspaceId)).orderBy(desc(videoProjects.updatedAt)).all().map((p) => ({ ...p, sceneCount: stats.get(p.id)?.n ?? 0, totalDurationSec: Math.round((stats.get(p.id)?.total ?? 0) * 10) / 10 }));
   },
   "studio.get": ({ id }) => {
     const db = getDb();
     const project = db.select().from(videoProjects).where(eq(videoProjects.id, id)).get();
     if (!project) throw notFound("dự án video");
-    const scenes = db
-      .select()
-      .from(videoScenes)
-      .where(eq(videoScenes.projectId, id))
-      .orderBy(asc(videoScenes.position))
-      .all();
+    const scenes = db.select().from(videoScenes).where(eq(videoScenes.projectId, id)).orderBy(asc(videoScenes.position)).all();
     return { ...project, scenes, characterRefs: characterRefsOf(id) };
   },
-  "studio.create": ({ referenceImages, ...input }) =>
-    getDb()
-      .insert(videoProjects)
-      .values({ id: newId(), ...input, ...(referenceImages ? { referenceImages: checkRefs(referenceImages) } : {}) })
-      .returning()
-      .get(),
+  "studio.create": ({ referenceImages, ...input }) => getDb().insert(videoProjects).values({ id: newId(), ...input, ...referenceImages ? { referenceImages: checkRefs(referenceImages) } : {} }).returning().get(),
   "studio.update": ({ id, patch: { referenceImages, ...patch } }) => {
-    const row = getDb()
-      .update(videoProjects)
-      .set({
-        ...patch,
-        ...(referenceImages ? { referenceImages: checkRefs(referenceImages) } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(videoProjects.id, id))
-      .returning()
-      .get();
+    const row = getDb().update(videoProjects).set({ ...patch, ...referenceImages ? { referenceImages: checkRefs(referenceImages) } : {}, updatedAt: new Date() }).where(eq(videoProjects.id, id)).returning().get();
     if (!row) throw notFound("dự án video");
     return row;
   },
   "studio.delete": ({ id }) => {
-    if (getDb().delete(videoProjects).where(eq(videoProjects.id, id)).run().changes === 0)
-      throw notFound("dự án video");
+    if (getDb().delete(videoProjects).where(eq(videoProjects.id, id)).run().changes === 0) throw notFound("dự án video");
     rmSync(segmentsDir(id), { recursive: true, force: true });
   },
   "studio.saveScenes": ({ projectId, scenes }) => {
     const db = getDb();
     return db.transaction((tx) => {
-      const project = tx
-        .select({ id: videoProjects.id, status: videoProjects.status })
-        .from(videoProjects)
-        .where(eq(videoProjects.id, projectId))
-        .get();
+      const project = tx.select({ id: videoProjects.id, status: videoProjects.status }).from(videoProjects).where(eq(videoProjects.id, projectId)).get();
       if (!project) throw notFound("dự án video");
-      const old = tx
-        .select()
-        .from(videoScenes)
-        .where(eq(videoScenes.projectId, projectId))
-        .orderBy(asc(videoScenes.position))
-        .all();
+      const old = tx.select().from(videoScenes).where(eq(videoScenes.projectId, projectId)).orderBy(asc(videoScenes.position)).all();
       const media = new Map();
-      for (const o of old)
-        if (o.mediaPath) media.set(o.mediaPrompt ?? "", [...(media.get(o.mediaPrompt ?? "") ?? []), o]);
+      for (const o of old) if (o.mediaPath) media.set(o.mediaPrompt ?? "", [...media.get(o.mediaPrompt ?? "") ?? [], o]);
       tx.delete(videoScenes).where(eq(videoScenes.projectId, projectId)).run();
       const rows = scenes.map((raw, position) => {
         const startImage = okImage(raw.startImage) ? raw.startImage : null;
@@ -200,20 +121,12 @@ export const studioHandlers = {
           ...raw,
           startImage,
           endImage: startImage && okImage(raw.endImage) ? raw.endImage : null,
-          sceneRefs: raw.sceneRefs ? raw.sceneRefs.filter((p) => okImage(p)).slice(0, 3) : null,
+          sceneRefs: raw.sceneRefs ? raw.sceneRefs.filter((p) => okImage(p)).slice(0, 3) : null
         };
         const { mediaPath, ...rest } = s;
         if (s.mediaMode === "upload") {
           const ok = !!mediaPath && /^uploads\/[\w.-]+$/.test(mediaPath) && existsSync(join(mediaDir(), mediaPath));
-          return {
-            id: newId(),
-            projectId,
-            position,
-            ...rest,
-            mediaPath: ok ? mediaPath : null,
-            mediaSource: "upload",
-            mediaCredit: null,
-          };
+          return { id: newId(), projectId, position, ...rest, mediaPath: ok ? mediaPath : null, mediaSource: "upload", mediaCredit: null };
         }
         const m = media.get(s.mediaPrompt ?? "")?.shift();
         return {
@@ -221,22 +134,12 @@ export const studioHandlers = {
           projectId,
           position,
           ...rest,
-          ...(m && m.mediaSource !== "upload"
-            ? { mediaPath: m.mediaPath, mediaCredit: m.mediaCredit, mediaSource: m.mediaSource }
-            : {}),
+          ...m && m.mediaSource !== "upload" ? { mediaPath: m.mediaPath, mediaCredit: m.mediaCredit, mediaSource: m.mediaSource } : {}
         };
       });
       if (rows.length) tx.insert(videoScenes).values(rows).run();
-      tx.update(videoProjects)
-        .set({ status: rows.length && project.status === "draft" ? "scripted" : project.status, updatedAt: new Date() })
-        .where(eq(videoProjects.id, projectId))
-        .run();
-      return tx
-        .select()
-        .from(videoScenes)
-        .where(eq(videoScenes.projectId, projectId))
-        .orderBy(asc(videoScenes.position))
-        .all();
+      tx.update(videoProjects).set({ status: rows.length && project.status === "draft" ? "scripted" : project.status, updatedAt: new Date() }).where(eq(videoProjects.id, projectId)).run();
+      return tx.select().from(videoScenes).where(eq(videoScenes.projectId, projectId)).orderBy(asc(videoScenes.position)).all();
     });
   },
   "studio.toContent": ({ id }) => {
@@ -244,49 +147,18 @@ export const studioHandlers = {
     return db.transaction((tx) => {
       const p = tx.select().from(videoProjects).where(eq(videoProjects.id, id)).get();
       if (!p) throw notFound("dự án video");
-      const scenes = tx
-        .select()
-        .from(videoScenes)
-        .where(eq(videoScenes.projectId, id))
-        .orderBy(asc(videoScenes.position))
-        .all();
+      const scenes = tx.select().from(videoScenes).where(eq(videoScenes.projectId, id)).orderBy(asc(videoScenes.position)).all();
       const durationSec = Math.round(scenes.reduce((a, s) => a + s.durationSec, 0) * 10) / 10;
       const caption = scenes[0]?.voiceover || null;
-      const values = {
-        workspaceId: p.workspaceId,
-        kind: "video",
-        title: p.topic.slice(0, 300),
-        caption,
-        aspect: "9:16",
-        durationSec,
-        source: "studio",
-      };
+      const values = { workspaceId: p.workspaceId, kind: "video", title: p.topic.slice(0, 300), caption, aspect: "9:16", durationSec, source: "studio" };
       const status = p.status === "rendered" ? "ready" : "draft";
-      const existing = p.contentItemId
-        ? tx.select().from(contentItems).where(eq(contentItems.id, p.contentItemId)).get()
-        : void 0;
+      const existing = p.contentItemId ? tx.select().from(contentItems).where(eq(contentItems.id, p.contentItemId)).get() : void 0;
       if (existing) {
-        return tx
-          .update(contentItems)
-          .set({
-            ...values,
-            ...(existing.status === "draft" || existing.status === "ready" ? { status } : {}),
-            updatedAt: new Date(),
-          })
-          .where(eq(contentItems.id, existing.id))
-          .returning()
-          .get();
+        return tx.update(contentItems).set({ ...values, ...existing.status === "draft" || existing.status === "ready" ? { status } : {}, updatedAt: new Date() }).where(eq(contentItems.id, existing.id)).returning().get();
       }
-      const item = tx
-        .insert(contentItems)
-        .values({ id: newId(), ...values, status })
-        .returning()
-        .get();
-      tx.update(videoProjects)
-        .set({ contentItemId: item.id, updatedAt: new Date() })
-        .where(eq(videoProjects.id, id))
-        .run();
+      const item = tx.insert(contentItems).values({ id: newId(), ...values, status }).returning().get();
+      tx.update(videoProjects).set({ contentItemId: item.id, updatedAt: new Date() }).where(eq(videoProjects.id, id)).run();
       return item;
     });
-  },
+  }
 };

@@ -1,9 +1,9 @@
-import { IpcChannel } from "../shared/ipc";
 import { BrowserWindow, ipcMain, app, nativeTheme, dialog, Notification } from "electron";
 import { savedTheme, applyTheme, createMainWindow } from "./window";
+import { IpcChannel } from "../shared/ipc";
 import { startSystemStats } from "./system-stats";
-import { initLogger, attachRendererLogging } from "./logger";
 import { registerApi } from "./api/index";
+import { initLogger, attachRendererLogging } from "./logger";
 import { dataRoot, writeDataMarker } from "./paths";
 import { onLicenseState } from "./license/index";
 import { closeFlowChrome } from "./flow/session";
@@ -36,7 +36,7 @@ function registerIpc() {
     name: app.getName(),
     version: app.getVersion(),
     platform: process.platform,
-    electron: process.versions.electron,
+    electron: process.versions.electron
   }));
 }
 
@@ -61,11 +61,8 @@ if (!app.requestSingleInstanceLock()) {
       } catch (err) {
         console.error("[auth] không mở được dữ liệu của phiên đã ghi nhớ", err);
         forgetSession(remembered.id);
-        dialog.showErrorBox(
-          "OmniPage Studio – lỗi dữ liệu",
-          `Không mở được dữ liệu của tài khoản ${remembered.email}:
-${err instanceof Error ? err.message : String(err)}`,
-        );
+        dialog.showErrorBox("OmniPage Studio – lỗi dữ liệu", `Không mở được dữ liệu của tài khoản ${remembered.email}:
+${err instanceof Error ? err.message : String(err)}`);
       }
     }
     registerIpc();
@@ -93,11 +90,7 @@ ${err instanceof Error ? err.message : String(err)}`,
         win.webContents.send(IpcChannel.InboxChanged, c);
         if (win.isFocused() || !Notification.isSupported() || Date.now() - lastNotify < 2e4) return;
         lastNotify = Date.now();
-        const n = new Notification({
-          title: `${c.newMessages} tin mới trong Hộp thư`,
-          body: c.channels.join(", ").slice(0, 120),
-          silent: false,
-        });
+        const n = new Notification({ title: `${c.newMessages} tin mới trong Hộp thư`, body: c.channels.join(", ").slice(0, 120), silent: false });
         n.on("click", () => {
           if (win.isDestroyed()) return;
           if (win.isMinimized()) win.restore();
@@ -106,19 +99,13 @@ ${err instanceof Error ? err.message : String(err)}`,
           win.webContents.send(IpcChannel.AppNavigate, "/inbox");
         });
         n.show();
-      },
+      }
     });
     bindEarlyCheckEvents((posts) => {
       if (!Notification.isSupported()) return;
       const n = new Notification({
         title: posts.length === 1 ? "Bài đăng đang phân phối kém" : `${posts.length} bài đăng đang phân phối kém`,
-        body: posts
-          .slice(0, 3)
-          .map(
-            (p) =>
-              `${p.channelName}: ${p.title.slice(0, 50)} (${p.flag === "zero" ? "0" : `${p.metric} / thường ~${p.baseline}`})`,
-          )
-          .join("\n"),
+        body: posts.slice(0, 3).map((p) => `${p.channelName}: ${p.title.slice(0, 50)} (${p.flag === "zero" ? "0" : `${p.metric} / thường ~${p.baseline}`})`).join("\n")
       });
       n.on("click", () => {
         showWindow();

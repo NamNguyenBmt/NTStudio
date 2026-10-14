@@ -22,13 +22,5 @@ export function RefreshLicenseButton() {
       setBusy(false);
     }
   };
-  return (
-    <IconButton
-      icon={RefreshCw}
-      label={"Làm mới gói & quyền"}
-      onClick={() => void run()}
-      disabled={busy}
-      className={busy ? "[&>svg]:animate-spin" : void 0}
-    />
-  );
+  return <IconButton icon={RefreshCw} label={"Làm mới gói & quyền"} onClick={() => void run()} disabled={busy} className={busy ? "[&>svg]:animate-spin" : void 0} />;
 }

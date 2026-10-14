@@ -1,5 +1,3 @@
-import { generateMusic } from "../media/music";
-import { estimateRender } from "../media/estimate";
 import { BrowserWindow, dialog, shell } from "electron";
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, copyFileSync } from "node:fs";
 import { join, extname, basename } from "node:path";
@@ -14,6 +12,8 @@ import { CLIP_VIDEO_EXT, CLIP_IMAGE_EXT, clipKind } from "../../shared/video";
 import { enqueueRender, cancelRender, listJobs, mediaStatus } from "../media/render-queue";
 import { canFlowUpscale, probeSize, upscaleVideo } from "../film/upscale";
 import { resolveMediaPath, resolveAttachedPath } from "../media/protocol";
+import { generateMusic } from "../media/music";
+import { estimateRender } from "../media/estimate";
 
 const AUDIO_EXT = [".mp3", ".m4a", ".aac", ".wav", ".ogg"];
 const DAY = 864e5;
@@ -61,18 +61,10 @@ export const mediaHandlers = {
   "media.setEncoder": ({ encoder }) => setPreferredEncoder(encoder),
   "media.status": () => mediaStatus(cachedEncoders()?.chosen ?? null),
   "media.voices": ({ provider }) => listVoices(provider),
-  "media.previewVoice": ({ provider, voiceId, workspaceId }) =>
-    previewVoice(provider, voiceId ?? null, workspaceId ?? null, mediaDir()),
-  "media.bgmList": () =>
-    readdirSync(bgmDir())
-      .filter((f) => AUDIO_EXT.includes(extname(f).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b)),
+  "media.previewVoice": ({ provider, voiceId, workspaceId }) => previewVoice(provider, voiceId ?? null, workspaceId ?? null, mediaDir()),
+  "media.bgmList": () => readdirSync(bgmDir()).filter((f) => AUDIO_EXT.includes(extname(f).toLowerCase())).sort((a, b) => a.localeCompare(b)),
   "media.importBgm": async () => {
-    const opts = {
-      title: "Chọn nhạc nền",
-      properties: ["openFile"],
-      filters: [{ name: "Âm thanh", extensions: AUDIO_EXT.map((e) => e.slice(1)) }],
-    };
+    const opts = { title: "Chọn nhạc nền", properties: ["openFile"], filters: [{ name: "Âm thanh", extensions: AUDIO_EXT.map((e) => e.slice(1)) }] };
     const win = BrowserWindow.getFocusedWindow();
     const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
     const src = res.canceled ? null : res.filePaths[0];
@@ -84,12 +76,7 @@ export const mediaHandlers = {
   "media.cleanup": () => {
     const now = Date.now();
     const active = new Set(
-      getDb()
-        .select({ id: renderJobs.id })
-        .from(renderJobs)
-        .where(inArray(renderJobs.status, ["queued", "running"]))
-        .all()
-        .map((r) => r.id),
+      getDb().select({ id: renderJobs.id }).from(renderJobs).where(inArray(renderJobs.status, ["queued", "running"])).all().map((r) => r.id)
     );
     let freed = 0;
     let files = 0;
@@ -111,34 +98,22 @@ export const mediaHandlers = {
     return v === "google_image" || v === "fal" ? v : "auto";
   },
   "media.setImageEngine": ({ engine }) => {
-    getDb()
-      .insert(settings)
-      .values({ key: "media.imageEngine", value: engine })
-      .onConflictDoUpdate({ target: settings.key, set: { value: engine, updatedAt: new Date() } })
-      .run();
+    getDb().insert(settings).values({ key: "media.imageEngine", value: engine }).onConflictDoUpdate({ target: settings.key, set: { value: engine, updatedAt: new Date() } }).run();
   },
   "render.start": ({ projectId }) => enqueueRender(projectId),
   "render.estimate": ({ projectId }) => estimateRender(projectId),
   "media.importClips": async ({ multiple, images }) => {
     const opts = {
-      title: images
-        ? "Chọn ảnh"
-        : multiple
-          ? "Chọn các clip / ảnh (gán lần lượt vào các cảnh)"
-          : "Chọn clip / ảnh cho cảnh",
+      title: images ? "Chọn ảnh" : multiple ? "Chọn các clip / ảnh (gán lần lượt vào các cảnh)" : "Chọn clip / ảnh cho cảnh",
       properties: multiple ? ["openFile", "multiSelections"] : ["openFile"],
-      filters: images
-        ? [{ name: "Ảnh", extensions: CLIP_IMAGE_EXT }]
-        : [{ name: "Video & ảnh", extensions: [...CLIP_VIDEO_EXT, ...CLIP_IMAGE_EXT] }],
+      filters: images ? [{ name: "Ảnh", extensions: CLIP_IMAGE_EXT }] : [{ name: "Video & ảnh", extensions: [...CLIP_VIDEO_EXT, ...CLIP_IMAGE_EXT] }]
     };
     const win = BrowserWindow.getFocusedWindow();
     const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
     if (res.canceled) return [];
     const dir = join(mediaDir(), "uploads");
     mkdirSync(dir, { recursive: true });
-    const files = [...res.filePaths]
-      .sort((a, b) => basename(a).localeCompare(basename(b), "vi", { numeric: true }))
-      .slice(0, 100);
+    const files = [...res.filePaths].sort((a, b) => basename(a).localeCompare(basename(b), "vi", { numeric: true })).slice(0, 100);
     return files.map((src) => {
       const kind = clipKind(src);
       if (!kind) throw new ApiError("VALIDATION", `Không hỗ trợ file ${basename(src)}`);
@@ -173,7 +148,7 @@ export const mediaHandlers = {
         onStatus: (s) => {
           const job = upscaling.get(path);
           if (job) job.status = s;
-        },
+        }
       });
     } catch (err) {
       if (ctrl.signal.aborted) throw new ApiError("CONFLICT", "Đã hủy nâng cấp");
@@ -191,5 +166,5 @@ export const mediaHandlers = {
     const abs = resolveMediaPath(path) ?? resolveAttachedPath(path);
     if (!abs || !existsSync(abs)) throw new ApiError("NOT_FOUND", "Không tìm thấy file");
     shell.showItemInFolder(abs);
-  },
+  }
 };

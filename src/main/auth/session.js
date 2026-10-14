@@ -1,19 +1,19 @@
+import { existsSync, mkdirSync, readdirSync, statSync, renameSync, cpSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { recoverInterruptedJobs, stopAllRenders } from "../media/render-queue";
+import { setCurrentUser, currentUser, userDir, legacyPaths } from "../paths";
+import { dbFilePath, openDatabase, closeDatabase } from "../db/index";
+import { resetVaultCache, rekeyFromLegacy } from "../vault";
 import { seedIfEmpty } from "../seed";
 import { ensureProviders } from "../ai/providers";
-import { startFilmQueue, stopFilmQueue } from "../film/queue";
-import { recoverInterruptedJobs, stopAllRenders } from "../media/render-queue";
+import { onLicenseState, onLicenseChange, licenseView, startLicense, stopLicense } from "../license/index";
 import { startPublisher, stopPublisher } from "../publish/worker";
 import { startInbox, stopInbox } from "../inbox/worker";
 import { startInsights, stopInsights } from "../analytics/insights";
 import { startEarlyCheck, stopEarlyCheck } from "../analytics/early-check";
+import { startFilmQueue, stopFilmQueue } from "../film/queue";
 import { readStore, writeStore, updateUser } from "./store";
 import { enforceQuota } from "../quota";
-import { existsSync, mkdirSync, readdirSync, statSync, renameSync, cpSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { setCurrentUser, currentUser, userDir, legacyPaths } from "../paths";
-import { dbFilePath, openDatabase, closeDatabase } from "../db/index";
-import { resetVaultCache, rekeyFromLegacy } from "../vault";
-import { onLicenseState, onLicenseChange, licenseView, startLicense, stopLicense } from "../license/index";
 
 let active = null;
 let workersOn = false;
@@ -42,7 +42,7 @@ function stopWorkers() {
   console.info("[license] dừng tác vụ nền");
 }
 
-onLicenseChange((usable) => (usable ? startWorkers() : stopWorkers()));
+onLicenseChange((usable) => usable ? startWorkers() : stopWorkers());
 
 onLicenseState(() => {
   if (!currentUser()) return;
@@ -60,11 +60,11 @@ export const toAuthUser = (u) => ({
   provider: u.provider,
   createdAt: new Date(u.createdAt),
   lastLoginAt: u.lastLoginAt ? new Date(u.lastLoginAt) : null,
-  plan: active?.id === u.id ? licenseView().plan : null,
+  plan: active?.id === u.id ? licenseView().plan : null
 });
 
 export function activeUser() {
-  return active ? (readStore().users.find((u) => u.id === active.id) ?? null) : null;
+  return active ? readStore().users.find((u) => u.id === active.id) ?? null : null;
 }
 
 export function hasLegacyData() {
@@ -96,7 +96,8 @@ function mergeTree(from, to) {
   }
   try {
     if (!readdirSync(from).length) rmSync(from, { recursive: true });
-  } catch {}
+  } catch {
+  }
   return left;
 }
 
@@ -113,8 +114,7 @@ export function adoptLegacyData(userId) {
   mkdirSync(dir, { recursive: true });
   const vaultTo = join(dir, "vault");
   const dataTo = join(dir, "data");
-  if (existsSync(vaultTo) || existsSync(dataTo))
-    throw new Error("Tài khoản đã có dữ liệu – không chuyển dữ liệu cũ đè lên");
+  if (existsSync(vaultTo) || existsSync(dataTo)) throw new Error("Tài khoản đã có dữ liệu – không chuyển dữ liệu cũ đè lên");
   const movedVault = existsSync(legacy.vault);
   if (movedVault) renameSync(legacy.vault, vaultTo);
   try {
@@ -125,9 +125,7 @@ export function adoptLegacyData(userId) {
   }
   setLegacyOwner(userId);
   const left = mergeTree(legacy.media, join(dir, "media"));
-  console.info(
-    `[auth] đã chuyển dữ liệu cũ vào tài khoản ${userId.slice(0, 8)}${left ? ` (${left} file media đang bị khóa – sẽ chuyển ở lần đăng nhập sau)` : ""}`,
-  );
+  console.info(`[auth] đã chuyển dữ liệu cũ vào tài khoản ${userId.slice(0, 8)}${left ? ` (${left} file media đang bị khóa – sẽ chuyển ở lần đăng nhập sau)` : ""}`);
 }
 
 function repairLegacy(userId) {
@@ -141,9 +139,7 @@ function repairLegacy(userId) {
     if (rekeyed || owner === userId) {
       const backup = `${legacy.vault}.legacy-backup`;
       if (!existsSync(backup)) renameSync(legacy.vault, backup);
-      console.info(
-        `[auth] đã khôi phục ${rekeyed} bí mật từ két cũ${unreadable ? ` · ${unreadable} bí mật không giải mã được` : ""} · bản sao két cũ: ${backup}`,
-      );
+      console.info(`[auth] đã khôi phục ${rekeyed} bí mật từ két cũ${unreadable ? ` · ${unreadable} bí mật không giải mã được` : ""} · bản sao két cũ: ${backup}`);
     }
   }
   if (readStore().legacyOwner === userId && existsSync(legacy.media)) {

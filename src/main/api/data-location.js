@@ -1,9 +1,9 @@
 import { BrowserWindow, dialog, app, shell } from "electron";
 import { existsSync, readdirSync, statSync, statfsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { cp } from "node:fs/promises";
 import { DATA_MARKER, dataRoot, defaultDataRoot, setDataRootPointer, writeDataMarker } from "../paths";
 import { ApiError } from "../errors";
-import { cp } from "node:fs/promises";
 import { closeSession } from "../auth/session";
 
 function dirSize(dir) {
@@ -24,7 +24,7 @@ async function pickFolder(title) {
   const opts = { title, properties: ["openDirectory", "createDirectory"] };
   const win = BrowserWindow.getFocusedWindow();
   const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
-  return res.canceled ? null : (res.filePaths[0] ?? null);
+  return res.canceled ? null : res.filePaths[0] ?? null;
 }
 
 function relaunchSoon() {
@@ -42,13 +42,14 @@ export const dataLocationHandlers = {
     try {
       const fs = statfsSync(root);
       freeBytes = fs.bavail * fs.bsize;
-    } catch {}
+    } catch {
+    }
     return {
       root,
       isDefault: resolve(root) === resolve(defaultDataRoot()),
       defaultRoot: defaultDataRoot(),
       sizeBytes: dirSize(join(root, "users")) + dirSize(join(root, "auth")),
-      freeBytes,
+      freeBytes
     };
   },
   "storage.openRoot": async () => {
@@ -65,23 +66,17 @@ export const dataLocationHandlers = {
     if (resolve(target).startsWith(resolve(from) + "\\") || resolve(target).startsWith(resolve(from) + "/"))
       throw new ApiError("VALIDATION", "Không chọn thư mục nằm bên trong thư mục dữ liệu hiện tại");
     if (isDataDir(target) && existsSync(join(target, "auth", "users.json")))
-      throw new ApiError(
-        "VALIDATION",
-        'Thư mục này đã chứa dữ liệu OmniPage khác – chọn thư mục trống, hoặc dùng "Dùng thư mục dữ liệu có sẵn"',
-      );
+      throw new ApiError("VALIDATION", 'Thư mục này đã chứa dữ liệu OmniPage khác – chọn thư mục trống, hoặc dùng "Dùng thư mục dữ liệu có sẵn"');
     const need = dirSize(join(from, "users")) + dirSize(join(from, "auth"));
     try {
       const fs = statfsSync(picked);
-      if (fs.bavail * fs.bsize < need * 1.05 + 200 * 1024 * 1024)
-        throw new ApiError("VALIDATION", `Ổ đĩa đích không đủ chỗ (cần khoảng ${(need / 1024 ** 3).toFixed(1)} GB)`);
+      if (fs.bavail * fs.bsize < need * 1.05 + 200 * 1024 * 1024) throw new ApiError("VALIDATION", `Ổ đĩa đích không đủ chỗ (cần khoảng ${(need / 1024 ** 3).toFixed(1)} GB)`);
     } catch (err) {
       if (err instanceof ApiError) throw err;
     }
     closeSession();
     console.info(`[data] chuyển dữ liệu ${from} → ${target} (${(need / 1024 ** 2).toFixed(0)} MB)`);
-    for (const sub of ["auth", "users"])
-      if (existsSync(join(from, sub)))
-        await cp(join(from, sub), join(target, sub), { recursive: true, force: false, errorOnExist: false });
+    for (const sub of ["auth", "users"]) if (existsSync(join(from, sub))) await cp(join(from, sub), join(target, sub), { recursive: true, force: false, errorOnExist: false });
     writeDataMarker(target);
     setDataRootPointer(target);
     relaunchSoon();
@@ -91,21 +86,13 @@ export const dataLocationHandlers = {
   "storage.useExisting": async () => {
     const picked = await pickFolder("Chọn thư mục dữ liệu OmniPage đã sao lưu");
     if (!picked) return { changed: false, root: dataRoot() };
-    const dir = isDataDir(picked)
-      ? picked
-      : isDataDir(join(picked, "OmniPage Data"))
-        ? join(picked, "OmniPage Data")
-        : null;
-    if (!dir)
-      throw new ApiError(
-        "VALIDATION",
-        "Thư mục này không phải thư mục dữ liệu OmniPage (thiếu omnipage-data.json / auth/users.json)",
-      );
+    const dir = isDataDir(picked) ? picked : isDataDir(join(picked, "OmniPage Data")) ? join(picked, "OmniPage Data") : null;
+    if (!dir) throw new ApiError("VALIDATION", "Thư mục này không phải thư mục dữ liệu OmniPage (thiếu omnipage-data.json / auth/users.json)");
     if (resolve(dir) === resolve(dataRoot())) return { changed: false, root: dir };
     closeSession();
     setDataRootPointer(dir);
     console.info(`[data] dùng thư mục dữ liệu có sẵn: ${dir}`);
     relaunchSoon();
     return { changed: true, root: dir };
-  },
+  }
 };

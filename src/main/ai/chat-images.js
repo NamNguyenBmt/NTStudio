@@ -8,29 +8,13 @@ export function loadChatImages(files, max = 4) {
   const out = [];
   const dir = mkdtempSync(join(os.tmpdir(), "omni-ai-img-"));
   try {
-    for (const [i, f] of files
-      .filter((x) => existsSync(x))
-      .slice(0, max)
-      .entries()) {
+    for (const [i, f] of files.filter((x) => existsSync(x)).slice(0, max).entries()) {
       const dest = join(dir, `${i}.jpg`);
       try {
         execFileSync(
           ffmpegPath(),
-          [
-            "-y",
-            "-loglevel",
-            "error",
-            "-i",
-            f,
-            "-frames:v",
-            "1",
-            "-vf",
-            "scale='min(1024,iw)':'min(1024,ih)':force_original_aspect_ratio=decrease",
-            "-q:v",
-            "4",
-            dest,
-          ],
-          { windowsHide: true, timeout: 3e4 },
+          ["-y", "-loglevel", "error", "-i", f, "-frames:v", "1", "-vf", "scale='min(1024,iw)':'min(1024,ih)':force_original_aspect_ratio=decrease", "-q:v", "4", dest],
+          { windowsHide: true, timeout: 3e4 }
         );
         out.push({ mime: "image/jpeg", data: readFileSync(dest).toString("base64") });
       } catch (err) {

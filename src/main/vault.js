@@ -1,11 +1,11 @@
-import { randomBytes, scryptSync, createCipheriv, createDecipheriv, createHash } from "node:crypto";
 import { safeStorage } from "electron";
 import { existsSync, readFileSync, mkdirSync, writeFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import { currentUser, userDir } from "./paths";
+import { randomBytes, scryptSync, createCipheriv, createDecipheriv, createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { secrets } from "./db/schema";
 import { getDb, newId } from "./db/index";
+import { currentUser, userDir } from "./paths";
+import { secrets } from "./db/schema";
 import { ApiError } from "./errors";
 
 let masterKey = null;
@@ -61,7 +61,7 @@ export function writePortableKey(userId, password) {
     salt: salt.toString("base64"),
     iv: iv.toString("base64"),
     tag: c.getAuthTag().toString("base64"),
-    data: data.toString("base64"),
+    data: data.toString("base64")
   };
   const file = portablePath(userId);
   mkdirSync(join(file, ".."), { recursive: true });
@@ -77,14 +77,11 @@ export function recoverVaultOnThisMachine(userId, password) {
     try {
       const k = Buffer.from(safeStorage.decryptString(readFileSync(machine)), "base64");
       if (k.length === 32) return false;
-    } catch {}
+    } catch {
+    }
   }
   const p = JSON.parse(readFileSync(portable, "utf8"));
-  const d = createDecipheriv(
-    "aes-256-gcm",
-    portableKey(password, Buffer.from(p.salt, "base64")),
-    Buffer.from(p.iv, "base64"),
-  );
+  const d = createDecipheriv("aes-256-gcm", portableKey(password, Buffer.from(p.salt, "base64")), Buffer.from(p.iv, "base64"));
   d.setAuthTag(Buffer.from(p.tag, "base64"));
   const key = Buffer.concat([d.update(Buffer.from(p.data, "base64")), d.final()]);
   if (key.length !== 32) throw new ApiError("INTERNAL", "Khóa di chuyển hỏng");
@@ -120,21 +117,13 @@ export function putSecret(input) {
     authTag: cipher.getAuthTag().toString("base64"),
     preview: maskSecret(input.value),
     expiresAt: input.expiresAt ?? null,
-    updatedAt: new Date(),
+    updatedAt: new Date()
   };
-  getDb()
-    .insert(secrets)
-    .values({ id: newId(), kind: input.kind, ownerType: input.ownerType, ownerId: input.ownerId, ...row })
-    .onConflictDoUpdate({ target: [secrets.ownerType, secrets.ownerId, secrets.kind], set: row })
-    .run();
+  getDb().insert(secrets).values({ id: newId(), kind: input.kind, ownerType: input.ownerType, ownerId: input.ownerId, ...row }).onConflictDoUpdate({ target: [secrets.ownerType, secrets.ownerId, secrets.kind], set: row }).run();
 }
 
 export function readSecret(ownerType, ownerId, kind) {
-  const row = getDb()
-    .select()
-    .from(secrets)
-    .where(and(eq(secrets.ownerType, ownerType), eq(secrets.ownerId, ownerId), eq(secrets.kind, kind)))
-    .get();
+  const row = getDb().select().from(secrets).where(and(eq(secrets.ownerType, ownerType), eq(secrets.ownerId, ownerId), eq(secrets.kind, kind))).get();
   if (!row) return null;
   const decipher = createDecipheriv("aes-256-gcm", getMasterKey(), Buffer.from(row.iv, "base64"));
   decipher.setAAD(aad(ownerType, ownerId, kind));
@@ -170,20 +159,13 @@ export function rekeyFromLegacy(legacyKeyFile) {
     const c = createCipheriv("aes-256-gcm", current, iv);
     c.setAAD(aad(r.ownerType, r.ownerId, r.kind));
     const ct = Buffer.concat([c.update(value, "utf8"), c.final()]);
-    getDb()
-      .update(secrets)
-      .set({ ciphertext: ct.toString("base64"), iv: iv.toString("base64"), authTag: c.getAuthTag().toString("base64") })
-      .where(eq(secrets.id, r.id))
-      .run();
+    getDb().update(secrets).set({ ciphertext: ct.toString("base64"), iv: iv.toString("base64"), authTag: c.getAuthTag().toString("base64") }).where(eq(secrets.id, r.id)).run();
     rekeyed++;
   }
   return { rekeyed, unreadable };
 }
 
 export function deleteSecret(ownerType, ownerId, kind) {
-  const res = getDb()
-    .delete(secrets)
-    .where(and(eq(secrets.ownerType, ownerType), eq(secrets.ownerId, ownerId), eq(secrets.kind, kind)))
-    .run();
+  const res = getDb().delete(secrets).where(and(eq(secrets.ownerType, ownerType), eq(secrets.ownerId, ownerId), eq(secrets.kind, kind))).run();
   return res.changes > 0;
 }

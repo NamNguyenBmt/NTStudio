@@ -1,19 +1,4 @@
-import {
-  BookOpenText,
-  CalendarDays,
-  ChartColumn,
-  Clapperboard,
-  CreditCard,
-  Film,
-  FolderOpen,
-  Inbox,
-  Layers,
-  LayoutDashboard,
-  Lightbulb,
-  PlugZap,
-  Settings,
-  UsersRound,
-} from "lucide-react";
+import { BookOpenText, CalendarDays, ChartColumn, Clapperboard, CreditCard, Film, FolderOpen, Inbox, Layers, LayoutDashboard, Lightbulb, PlugZap, Settings, UsersRound } from "lucide-react";
 
 export const navItems = [
   { path: "/", label: "Tổng quan", icon: LayoutDashboard, shortcut: "Ctrl+1" },
@@ -29,5 +14,5 @@ export const navItems = [
   { path: "/analytics", label: "Phân tích", icon: ChartColumn, feature: "ANALYTICS" },
   { path: "/billing", label: "Gói & thanh toán", icon: CreditCard },
   { path: "/settings", label: "Cài đặt", icon: Settings, shortcut: "Ctrl+8" },
-  { path: "/guide", label: "Hướng dẫn kết nối", icon: PlugZap },
+  { path: "/guide", label: "Hướng dẫn kết nối", icon: PlugZap }
 ];

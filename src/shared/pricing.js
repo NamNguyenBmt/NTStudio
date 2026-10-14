@@ -14,7 +14,7 @@ export const DEFAULT_PRICING = {
   "gemini-3.6-flash": { input: 0.75, output: 3.75 },
   "gemini-3.8-flash": { input: 0.375, output: 1.88 },
   "gemini-2.5-flash": { input: 0.3, output: 2.5 },
-  "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 },
+  "gemini-2.5-flash-lite": { input: 0.1, output: 0.4 }
 };
 
 export function priceFor(model, overrides = {}) {
@@ -49,7 +49,7 @@ export const UNIT_PRICES = {
   "lyria-3-clip-preview": { per: "song", usd: 0.04, note: "≈ $0.04 / clip 30 giây (ước tính)" },
   music_v2_5: { per: "minute", usd: 0.15, note: "$0.15 / phút" },
   music_v2: { per: "minute", usd: 0.15, note: "$0.15 / phút" },
-  music_v1: { per: "minute", usd: 0.15, note: "$0.15 / phút" },
+  music_v1: { per: "minute", usd: 0.15, note: "$0.15 / phút" }
 };
 
 export function unitCost(model, amount) {

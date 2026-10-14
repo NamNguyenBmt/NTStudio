@@ -1,15 +1,14 @@
-import { openAuthWindow } from "./auth-window";
 import { shell } from "electron";
 import { CloudError, cloud } from "../cloud/client";
 import { cloudCustomerToken } from "../license/index";
+import { openAuthWindow } from "./auth-window";
 import { PublishError } from "./http";
 
 let cache = null;
 
 const toPublishError = (e, what) => {
   if (e instanceof PublishError) return e;
-  if (e instanceof CloudError)
-    return new PublishError(e.offline ? "transient" : e.status === 401 ? "auth" : "permanent", `${what}: ${e.message}`);
+  if (e instanceof CloudError) return new PublishError(e.offline ? "transient" : e.status === 401 ? "auth" : "permanent", `${what}: ${e.message}`);
   return new PublishError("transient", `${what}: ${e instanceof Error ? e.message : String(e)}`);
 };
 
@@ -47,7 +46,7 @@ export async function cloudLogin(p, scopes, ui) {
   }
   const appId = new URL(start.authUrl).searchParams;
   console.info(
-    `[oauth] ${ui.provider}: bắt đầu đăng nhập qua Omnira Cloud · app ${appId.get("client_key") ?? appId.get("client_id") ?? "?"} · redirect ${start.redirectUri}`,
+    `[oauth] ${ui.provider}: bắt đầu đăng nhập qua Omnira Cloud · app ${appId.get("client_key") ?? appId.get("client_id") ?? "?"} · redirect ${start.redirectUri}`
   );
   let polls = 20;
   if (ui.external) {
@@ -64,7 +63,7 @@ export async function cloudLogin(p, scopes, ui) {
       provider: ui.provider,
       parent: ui.parent,
       blocked: ui.blocked,
-      lostFlow: ui.lostFlow,
+      lostFlow: ui.lostFlow
     });
     try {
       await fetch(`${start.redirectUri}?${params.toString()}`, { signal: AbortSignal.timeout(45e3) });
@@ -73,7 +72,7 @@ export async function cloudLogin(p, scopes, ui) {
     }
   }
   let cancelled = false;
-  cancelExternal = () => (cancelled = true);
+  cancelExternal = () => cancelled = true;
   try {
     return await pollSession(start.sessionId, token, ui.provider, polls, () => cancelled);
   } finally {
@@ -97,13 +96,9 @@ async function pollSession(sessionId, token, provider, polls, cancelled) {
     if (r.status === "ERROR") {
       const msg = r.error ?? "đăng nhập không thành công";
       console.warn(`[oauth] ${provider}: Omnira Cloud báo lỗi – ${msg}`);
-      throw new PublishError(
-        "permanent",
-        /hủy|denied|từ chối/i.test(msg) ? "Bạn đã hủy / từ chối cấp quyền" : `${provider}: ${msg}`,
-      );
+      throw new PublishError("permanent", /hủy|denied|từ chối/i.test(msg) ? "Bạn đã hủy / từ chối cấp quyền" : `${provider}: ${msg}`);
     }
-    if (r.status === "EXPIRED" || r.status === "CONSUMED")
-      throw new PublishError("permanent", `Phiên đăng nhập ${provider} đã hết hạn – thử lại`);
+    if (r.status === "EXPIRED" || r.status === "CONSUMED") throw new PublishError("permanent", `Phiên đăng nhập ${provider} đã hết hạn – thử lại`);
     await new Promise((res) => setTimeout(res, polls > 100 ? 1500 : 800));
   }
   throw new PublishError("transient", `Chưa nhận được kết quả đăng nhập ${provider} – thử lại`);
@@ -115,8 +110,7 @@ export async function cloudRefresh(p, tokenValue) {
   try {
     return await cloud(`/api/client/v1/oauth/${p}/refresh`, { method: "POST", body: { token: tokenValue }, token });
   } catch (e) {
-    if (e instanceof CloudError && e.code === "OAUTH_ERROR")
-      throw new PublishError("auth", `Làm mới token thất bại – kết nối lại kênh (${e.message})`);
+    if (e instanceof CloudError && e.code === "OAUTH_ERROR") throw new PublishError("auth", `Làm mới token thất bại – kết nối lại kênh (${e.message})`);
     throw toPublishError(e, "Làm mới token qua Omnira Cloud thất bại");
   }
 }

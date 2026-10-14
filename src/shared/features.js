@@ -5,7 +5,7 @@ export const FEATURE_LABEL = {
   FLOW: "Tạo ảnh / video bằng Google Flow",
   CALENDAR: "Lịch đăng bài",
   INBOX: "Hộp thư hợp nhất",
-  ANALYTICS: "Phân tích số liệu",
+  ANALYTICS: "Phân tích số liệu"
 };
 
 export const isFeatureCode = (s) => s in FEATURE_LABEL;
@@ -15,7 +15,7 @@ const LEGACY_LABEL = {
   "series ai": "SERIES",
   "xưởng phim": "FILM",
   "lịch đăng bài": "CALENDAR",
-  "hộp thư hợp nhất": "INBOX",
+  "hộp thư hợp nhất": "INBOX"
 };
 
 export function normalizeFeatures(list) {
@@ -38,8 +38,9 @@ const FEATURE_NAMESPACES = [
   ["posts.", "CALENDAR"],
   ["inbox.", "INBOX"],
   ["analytics.", "ANALYTICS"],
-  ["insights.", "ANALYTICS"],
+  ["insights.", "ANALYTICS"]
 ];
+
 const VIEW_ONLY = new Set([
   "film.gate",
   "film.list",
@@ -66,12 +67,11 @@ const VIEW_ONLY = new Set([
   "analytics.overview",
   "analytics.goals",
   "insights.last",
-  "insights.bestHours",
+  "insights.bestHours"
 ]);
 
 export function featureForEndpoint(endpoint) {
   if (VIEW_ONLY.has(endpoint)) return null;
-  for (const [prefix, code] of FEATURE_NAMESPACES)
-    if (prefix.endsWith(".") ? endpoint.startsWith(prefix) : endpoint === prefix) return code;
+  for (const [prefix, code] of FEATURE_NAMESPACES) if (prefix.endsWith(".") ? endpoint.startsWith(prefix) : endpoint === prefix) return code;
   return null;
 }

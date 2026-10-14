@@ -13,9 +13,7 @@ export async function convertVoice(o) {
   const out = join(dir, `${key}.mp3`);
   if (existsSync(out)) return out;
   const src = join(dir, `${key}-src.mp3`);
-  await runFfmpeg(["-y", "-loglevel", "error", "-i", o.clip, "-vn", "-ac", "1", "-ar", "44100", "-b:a", "128k", src], {
-    signal: o.signal,
-  });
+  await runFfmpeg(["-y", "-loglevel", "error", "-i", o.clip, "-vn", "-ac", "1", "-ar", "44100", "-b:a", "128k", src], { signal: o.signal });
   const { key: apiKey, baseUrl, row } = requireKey("elevenlabs");
   const base = (baseUrl ?? "https://api.elevenlabs.io").replace(/\/$/, "");
   const form = new FormData();
@@ -26,18 +24,12 @@ export async function convertVoice(o) {
     method: "POST",
     headers: { "xi-api-key": apiKey },
     body: form,
-    signal: o.signal,
+    signal: o.signal
   });
   if (!res.ok) {
     const text = (await res.text().catch(() => "")).slice(0, 300);
     throw new Error(
-      res.status === 401
-        ? "Key ElevenLabs không hợp lệ"
-        : res.status === 404
-          ? "Không tìm thấy giọng ElevenLabs của nhân vật (voice id sai hoặc đã xóa)"
-          : res.status === 429
-            ? "ElevenLabs đang giới hạn tần suất – thử lại sau"
-            : `ElevenLabs đổi giọng lỗi HTTP ${res.status}${text ? `: ${text}` : ""}`,
+      res.status === 401 ? "Key ElevenLabs không hợp lệ" : res.status === 404 ? "Không tìm thấy giọng ElevenLabs của nhân vật (voice id sai hoặc đã xóa)" : res.status === 429 ? "ElevenLabs đang giới hạn tần suất – thử lại sau" : `ElevenLabs đổi giọng lỗi HTTP ${res.status}${text ? `: ${text}` : ""}`
     );
   }
   writeFileSync(out, Buffer.from(await res.arrayBuffer()));
@@ -46,11 +38,9 @@ export async function convertVoice(o) {
 }
 
 export function dubVoiceOf(c, vietnamese) {
-  if (c?.voiceProvider && (c.voiceId || c.voiceProvider === "edge_tts"))
-    return { provider: c.voiceProvider, voiceId: c.voiceId, fallback: false };
+  if (c?.voiceProvider && (c.voiceId || c.voiceProvider === "edge_tts")) return { provider: c.voiceProvider, voiceId: c.voiceId, fallback: false };
   if (!vietnamese) return null;
-  const female =
-    /\b(female|woman|girl|lady)\b/i.test(c?.voiceProfile ?? "") || /\b(she|her)\b/i.test(c?.description ?? "");
+  const female = /\b(female|woman|girl|lady)\b/i.test(c?.voiceProfile ?? "") || /\b(she|her)\b/i.test(c?.description ?? "");
   return { provider: "edge_tts", voiceId: female ? EDGE_VOICES[0].id : EDGE_VOICES[1].id, fallback: true };
 }
 
@@ -61,7 +51,8 @@ async function ttsLine(provider, voiceId, text, workspaceId, signal) {
     try {
       const f = join(dir, JSON.parse(readFileSync(meta, "utf8")).name);
       if (existsSync(f)) return f;
-    } catch {}
+    } catch {
+    }
   }
   mkdirSync(dir, { recursive: true });
   const r = await synthesize({ provider, voiceId, text, dir, workspaceId, signal });
@@ -78,13 +69,8 @@ export async function dubLines(o) {
   }
   if (!files.length) return null;
   const inputs = files.flatMap((f) => ["-i", f]);
-  const parts = files.map(
-    (_f, i) => `[${i}:a]aresample=44100,aformat=sample_fmts=s16:channel_layouts=stereo,apad=pad_dur=0.2[p${i}]`,
-  );
+  const parts = files.map((_f, i) => `[${i}:a]aresample=44100,aformat=sample_fmts=s16:channel_layouts=stereo,apad=pad_dur=0.2[p${i}]`);
   const filter = `${parts.join(";")};${files.map((_f, i) => `[p${i}]`).join("")}concat=n=${files.length}:v=0:a=1[out]`;
-  await runFfmpeg(
-    ["-y", "-loglevel", "error", ...inputs, "-filter_complex", filter, "-map", "[out]", "-c:a", "pcm_s16le", o.out],
-    { signal: o.signal },
-  );
+  await runFfmpeg(["-y", "-loglevel", "error", ...inputs, "-filter_complex", filter, "-map", "[out]", "-c:a", "pcm_s16le", o.out], { signal: o.signal });
   return { file: o.out, durationSec: await probeDuration(o.out) };
 }

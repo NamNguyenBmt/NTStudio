@@ -13,7 +13,8 @@ export function dataRoot() {
     const v = JSON.parse(readFileSync(pointerFile(), "utf8"));
     if (v.root && existsSync(v.root)) root = v.root;
     else if (v.root) console.error(`[data] không tìm thấy thư mục dữ liệu đã chọn (${v.root}) – dùng thư mục mặc định`);
-  } catch {}
+  } catch {
+  }
   rootCache = root;
   return root;
 }
@@ -22,10 +23,7 @@ export const defaultDataRoot = () => app.getPath("userData");
 
 export function setDataRootPointer(root) {
   const tmp = pointerFile() + ".tmp";
-  writeFileSync(
-    tmp,
-    JSON.stringify(root && resolve(root) !== resolve(defaultDataRoot()) ? { root: resolve(root) } : {}, null, 2),
-  );
+  writeFileSync(tmp, JSON.stringify(root && resolve(root) !== resolve(defaultDataRoot()) ? { root: resolve(root) } : {}, null, 2));
   renameSync(tmp, pointerFile());
   rootCache = null;
 }
@@ -34,7 +32,7 @@ export function writeDataMarker(root = dataRoot()) {
   const f = join(root, DATA_MARKER);
   if (existsSync(f)) return;
   mkdirSync(root, { recursive: true });
-  writeFileSync(f, JSON.stringify({ app: "Omnira Studio", version: 1, createdAt: new Date().toISOString() }, null, 2));
+  writeFileSync(f, JSON.stringify({ app: "Omnira Studio", version: 1, createdAt: (new Date()).toISOString() }, null, 2));
 }
 
 export const authRoot = () => join(dataRoot(), "auth");
@@ -62,5 +60,5 @@ export const legacyPaths = () => ({
   db: join(app.getPath("userData"), "data", "omnipage.db"),
   dataDir: join(app.getPath("userData"), "data"),
   media: join(app.getPath("userData"), "media"),
-  vault: join(app.getPath("userData"), "vault"),
+  vault: join(app.getPath("userData"), "vault")
 });

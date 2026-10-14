@@ -19,11 +19,7 @@ export function listClones() {
 }
 
 function saveClones(list) {
-  getDb()
-    .insert(settings)
-    .values({ key: KEY, value: list })
-    .onConflictDoUpdate({ target: settings.key, set: { value: list, updatedAt: new Date() } })
-    .run();
+  getDb().insert(settings).values({ key: KEY, value: list }).onConflictDoUpdate({ target: settings.key, set: { value: list, updatedAt: new Date() } }).run();
 }
 
 export function cloneRef(voiceId) {
@@ -45,9 +41,7 @@ export const localTtsHandlers = {
     const opts = {
       title: "Chọn file giọng mẫu (3–15 giây, một người nói, không nhạc nền)",
       properties: ["openFile"],
-      filters: [
-        { name: "Âm thanh / video", extensions: ["wav", "mp3", "m4a", "aac", "ogg", "flac", "mp4", "mov", "webm"] },
-      ],
+      filters: [{ name: "Âm thanh / video", extensions: ["wav", "mp3", "m4a", "aac", "ogg", "flac", "mp4", "mov", "webm"] }]
     };
     const win = BrowserWindow.getFocusedWindow();
     const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
@@ -58,35 +52,18 @@ export const localTtsHandlers = {
     const id = newId();
     const file = `voice-clones/${id}.wav`;
     const abs = join(mediaDir(), file);
-    await runFfmpeg([
-      "-y",
-      "-i",
-      src,
-      "-vn",
-      "-ac",
-      "1",
-      "-ar",
-      "24000",
-      "-t",
-      String(MAX_SEC),
-      "-c:a",
-      "pcm_s16le",
-      abs,
-    ]);
+    await runFfmpeg(["-y", "-i", src, "-vn", "-ac", "1", "-ar", "24000", "-t", String(MAX_SEC), "-c:a", "pcm_s16le", abs]);
     const durationSec = await probeDuration(abs);
     if (durationSec < MIN_SEC) {
       rmSync(abs, { force: true });
-      throw new ApiError(
-        "VALIDATION",
-        `Giọng mẫu chỉ dài ${durationSec.toFixed(1)} giây – cần ít nhất ${MIN_SEC} giây`,
-      );
+      throw new ApiError("VALIDATION", `Giọng mẫu chỉ dài ${durationSec.toFixed(1)} giây – cần ít nhất ${MIN_SEC} giây`);
     }
     const clone = { id, name: name.trim() || basename(src, extname(src)), file, durationSec, createdAt: Date.now() };
     saveClones([...listClones(), clone]);
     return clone;
   },
   "localtts.renameClone": ({ id, name }) => {
-    saveClones(listClones().map((c) => (c.id === id ? { ...c, name } : c)));
+    saveClones(listClones().map((c) => c.id === id ? { ...c, name } : c));
   },
   "localtts.removeClone": ({ id }) => {
     const list = listClones();
@@ -94,5 +71,5 @@ export const localTtsHandlers = {
     if (!c) return;
     rmSync(join(mediaDir(), c.file), { force: true });
     saveClones(list.filter((x) => x.id !== id));
-  },
+  }
 };

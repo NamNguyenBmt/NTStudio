@@ -1,9 +1,10 @@
-import { MANAGED_PROVIDERS, managedKey } from "../cloud/app-config";
-import { PROVIDERS, providerInfo } from "../../shared/providers";
 import { eq, and } from "drizzle-orm";
+import { readSecret } from "../vault";
 import { aiProviders } from "../db/schema";
 import { getDb, newId } from "../db/index";
-import { readSecret } from "../vault";
+import "../seed";
+import { MANAGED_PROVIDERS, managedKey } from "../cloud/app-config";
+import { PROVIDERS, providerInfo } from "../../shared/providers";
 
 export class AiError extends Error {
   constructor(kind, message, status) {
@@ -13,17 +14,7 @@ export class AiError extends Error {
   }
   /** Lỗi tạm thời hoặc do nhà cung cấp → thử provider kế tiếp trong chuỗi */
   get retryable() {
-    return [
-      "rate_limit",
-      "overloaded",
-      "timeout",
-      "network",
-      "bad_request",
-      "auth",
-      "refusal",
-      "invalid_output",
-      "unknown",
-    ].includes(this.kind);
+    return ["rate_limit", "overloaded", "timeout", "network", "bad_request", "auth", "refusal", "invalid_output", "unknown"].includes(this.kind);
   }
 }
 
@@ -43,7 +34,7 @@ export function resolveKey(row) {
   const owner = keyOwner(row);
   const key = readSecret("ai_provider", owner.id, "api_key");
   const from = providerInfo(row.provider).keyFrom;
-  return key ? { key, baseUrl: row.baseUrl ?? (from ? (providerRow(from)?.baseUrl ?? null) : null), owner } : null;
+  return key ? { key, baseUrl: row.baseUrl ?? (from ? providerRow(from)?.baseUrl ?? null : null), owner } : null;
 }
 
 export function requireKey(provider) {
@@ -60,7 +51,7 @@ export function requireKey(provider) {
     const owner = keyOwner(row);
     throw new AiError(
       "no_provider",
-      `${owner.id !== row.id ? `${row.label} dùng key ${owner.label}, nhưng ${owner.label}` : row.label} chưa có API key – nhập ở Cài đặt & Khóa API`,
+      `${owner.id !== row.id ? `${row.label} dùng key ${owner.label}, nhưng ${owner.label}` : row.label} chưa có API key – nhập ở Cài đặt & Khóa API`
     );
   }
   return { key: k.key, baseUrl: k.baseUrl, row };
@@ -76,34 +67,25 @@ export function isReady(provider) {
 export function ensureProviders() {
   const db = getDb();
   const existing = new Set(
-    db
-      .select({ provider: aiProviders.provider })
-      .from(aiProviders)
-      .all()
-      .map((r) => r.provider),
+    db.select({ provider: aiProviders.provider }).from(aiProviders).all().map((r) => r.provider)
   );
   const renamed = { google_image: ["Google Nano Banana"], local_tts: ["VieNeu-TTS (Local · GPU)"] };
   for (const [provider, oldLabels] of Object.entries(renamed)) {
     const label = PROVIDERS[provider]?.label;
     if (label)
       for (const old of oldLabels)
-        db.update(aiProviders)
-          .set({ label })
-          .where(and(eq(aiProviders.provider, provider), eq(aiProviders.label, old)))
-          .run();
+        db.update(aiProviders).set({ label }).where(and(eq(aiProviders.provider, provider), eq(aiProviders.label, old))).run();
   }
   for (const [provider, info] of Object.entries(PROVIDERS)) {
     if (existing.has(provider)) continue;
-    db.insert(aiProviders)
-      .values({
-        id: newId(),
-        provider,
-        category: info.category,
-        label: info.label,
-        defaultModel: info.models[0]?.id ?? null,
-        priority: info.priority ?? 9,
-        status: info.keyless ? "valid" : "untested",
-      })
-      .run();
+    db.insert(aiProviders).values({
+      id: newId(),
+      provider,
+      category: info.category,
+      label: info.label,
+      defaultModel: info.models[0]?.id ?? null,
+      priority: info.priority ?? 9,
+      status: info.keyless ? "valid" : "untested"
+    }).run();
   }
 }

@@ -11,7 +11,7 @@ const LEAD_MS = 30 * 6e4;
 const DEFAULT_SLOTS = [
   { start: "11:30", end: "13:00", weight: 0.35 },
   { start: "19:30", end: "22:00", weight: 0.45 },
-  { start: "07:00", end: "08:30", weight: 0.2 },
+  { start: "07:00", end: "08:30", weight: 0.2 }
 ];
 
 const PLATFORM_FIT = {
@@ -19,7 +19,7 @@ const PLATFORM_FIT = {
   reel: ["instagram", "tiktok", "youtube", "facebook"],
   carousel: ["instagram", "facebook"],
   image: ["facebook", "instagram"],
-  text: ["facebook"],
+  text: ["facebook"]
 };
 
 const minutesOf = (hhmm) => {
@@ -28,7 +28,7 @@ const minutesOf = (hhmm) => {
 };
 
 function findSlot(from, slots, taken, spacingMs, horizonDays = HORIZON_DAYS) {
-  const ordered = [...(slots.length ? slots : DEFAULT_SLOTS)].sort((a, b) => b.weight - a.weight);
+  const ordered = [...slots.length ? slots : DEFAULT_SLOTS].sort((a, b) => b.weight - a.weight);
   const day0 = new Date(from);
   day0.setHours(0, 0, 0, 0);
   for (let d = 0; d < horizonDays; d++) {
@@ -51,19 +51,11 @@ export const schedulerHandlers = {
     const spacingMs = spacingHours * HOUR;
     return db.transaction((tx) => {
       const items = tx.select().from(contentItems).where(inArray(contentItems.id, contentIds)).all();
-      const wsRows = tx
-        .select({ id: workspaces.id, goldenHours: workspaces.goldenHours })
-        .from(workspaces)
-        .where(isNull(workspaces.archivedAt))
-        .all();
+      const wsRows = tx.select({ id: workspaces.id, goldenHours: workspaces.goldenHours }).from(workspaces).where(isNull(workspaces.archivedAt)).all();
       const activeChannels = tx.select().from(channels).where(eq(channels.status, "active")).all();
-      const existing = tx
-        .select({ channelId: scheduledPosts.channelId, at: scheduledPosts.scheduledAt })
-        .from(scheduledPosts)
-        .where(and(eq(scheduledPosts.status, "queued"), gte(scheduledPosts.scheduledAt, new Date(now - DAY))))
-        .all();
+      const existing = tx.select({ channelId: scheduledPosts.channelId, at: scheduledPosts.scheduledAt }).from(scheduledPosts).where(and(eq(scheduledPosts.status, "queued"), gte(scheduledPosts.scheduledAt, new Date(now - DAY)))).all();
       const taken = new Map();
-      for (const e of existing) taken.set(e.channelId, [...(taken.get(e.channelId) ?? []), e.at.getTime()]);
+      for (const e of existing) taken.set(e.channelId, [...taken.get(e.channelId) ?? [], e.at.getTime()]);
       const allTimes = existing.map((e) => e.at.getTime());
       const stagger = staggerPrefs(tx);
       const result = { created: [], skipped: [] };
@@ -79,13 +71,7 @@ export const schedulerHandlers = {
           continue;
         }
         const fit = PLATFORM_FIT[item.kind];
-        const candidates = activeChannels
-          .filter((c) => c.workspaceId === item.workspaceId && fit.includes(c.platform) && c.tokenStatus !== "expired")
-          .sort(
-            (a, b) =>
-              fit.indexOf(a.platform) - fit.indexOf(b.platform) ||
-              (taken.get(a.id)?.length ?? 0) - (taken.get(b.id)?.length ?? 0),
-          );
+        const candidates = activeChannels.filter((c) => c.workspaceId === item.workspaceId && fit.includes(c.platform) && c.tokenStatus !== "expired").sort((a, b) => fit.indexOf(a.platform) - fit.indexOf(b.platform) || (taken.get(a.id)?.length ?? 0) - (taken.get(b.id)?.length ?? 0));
         if (!candidates.length) {
           result.skipped.push({ contentId, reason: "Pocket không có kênh hoạt động phù hợp định dạng" });
           continue;
@@ -97,35 +83,16 @@ export const schedulerHandlers = {
           if (slot == null) continue;
           const t = staggerTime(slot, allTimes, stagger);
           allTimes.push(t);
-          const post = tx
-            .insert(scheduledPosts)
-            .values({
-              id: newId(),
-              contentItemId: item.id,
-              channelId: ch.id,
-              scheduledAt: new Date(t),
-              isGoldenHour: true,
-            })
-            .returning()
-            .get();
-          tx.update(contentItems)
-            .set({ status: "scheduled", updatedAt: new Date() })
-            .where(eq(contentItems.id, item.id))
-            .run();
-          taken.set(ch.id, [...(taken.get(ch.id) ?? []), t]);
-          result.created.push({
-            postId: post.id,
-            contentId: item.id,
-            channelName: ch.name,
-            scheduledAt: post.scheduledAt,
-          });
+          const post = tx.insert(scheduledPosts).values({ id: newId(), contentItemId: item.id, channelId: ch.id, scheduledAt: new Date(t), isGoldenHour: true }).returning().get();
+          tx.update(contentItems).set({ status: "scheduled", updatedAt: new Date() }).where(eq(contentItems.id, item.id)).run();
+          taken.set(ch.id, [...taken.get(ch.id) ?? [], t]);
+          result.created.push({ postId: post.id, contentId: item.id, channelName: ch.name, scheduledAt: post.scheduledAt });
           placed = true;
           break;
         }
-        if (!placed)
-          result.skipped.push({ contentId, reason: `Hết khung giờ vàng trống trong ${HORIZON_DAYS} ngày tới` });
+        if (!placed) result.skipped.push({ contentId, reason: `Hết khung giờ vàng trống trong ${HORIZON_DAYS} ngày tới` });
       }
       return result;
     });
-  },
+  }
 };

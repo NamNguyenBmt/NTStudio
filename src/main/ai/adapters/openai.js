@@ -16,34 +16,25 @@ export function openaiCompatible(defaultBase, flavor) {
           { role: "system", content: req.system },
           {
             role: "user",
-            content:
-              req.images?.length && flavor === "openai"
-                ? [
-                    ...req.images.map((i) => ({
-                      type: "image_url",
-                      image_url: { url: `data:${i.mime};base64,${i.data}` },
-                    })),
-                    { type: "text", text: req.prompt },
-                  ]
-                : req.prompt,
-          },
+            content: req.images?.length && flavor === "openai" ? [...req.images.map((i) => ({ type: "image_url", image_url: { url: `data:${i.mime};base64,${i.data}` } })), { type: "text", text: req.prompt }] : req.prompt
+          }
         ],
-        ...(flavor === "openai" ? { max_completion_tokens: req.maxTokens } : { max_tokens: req.maxTokens }),
-        ...(req.temperature != null && !reasoning ? { temperature: req.temperature } : {}),
-        ...(req.json && ctx.model !== "deepseek-reasoner" ? { response_format: { type: "json_object" } } : {}),
+        ...flavor === "openai" ? { max_completion_tokens: req.maxTokens } : { max_tokens: req.maxTokens },
+        ...req.temperature != null && !reasoning ? { temperature: req.temperature } : {},
+        ...req.json && ctx.model !== "deepseek-reasoner" ? { response_format: { type: "json_object" } } : {}
       };
       const res = await requestJson(`${base(ctx)}/chat/completions`, {
         method: "POST",
         headers: headers(ctx.apiKey),
         body: JSON.stringify(body),
-        signal: ctx.signal,
+        signal: ctx.signal
       });
       return {
         text: res.choices[0]?.message.content ?? "",
         model: res.model || ctx.model,
         inputTokens: res.usage?.prompt_tokens ?? 0,
-        outputTokens: res.usage?.completion_tokens ?? 0,
+        outputTokens: res.usage?.completion_tokens ?? 0
       };
-    },
+    }
   };
 }

@@ -2,13 +2,13 @@ export const HOOK_PLATFORM_LABEL = {
   facebook: "Facebook",
   tiktok: "TikTok",
   instagram: "Instagram",
-  youtube: "YouTube",
+  youtube: "YouTube"
 };
 
 export const HEALTH_LABEL = {
   ok: { label: "Đạt chuẩn", tone: "success" },
   warn: { label: "Nên sửa", tone: "warning" },
-  risk: { label: "Rủi ro cao", tone: "danger" },
+  risk: { label: "Rủi ro cao", tone: "danger" }
 };
 
 export function hookGrade(score) {
@@ -20,6 +20,6 @@ export function hookGrade(score) {
 export function hookFingerprint(x, platform, extra = "") {
   const s = `${platform}|${x.title}|${x.caption ?? ""}|${x.hashtags.join(" ")}|${extra}`;
   let h = 5381;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = (h << 5) + h + s.charCodeAt(i) | 0;
   return (h >>> 0).toString(36) + s.length.toString(36);
 }

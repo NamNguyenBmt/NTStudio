@@ -14,21 +14,14 @@ const token = () => {
 
 const fail = (e) => {
   if (e instanceof ApiError) return e;
-  if (e instanceof CloudError)
-    return new ApiError(
-      e.status === 401 ? "AUTH" : e.status === 404 ? "NOT_FOUND" : e.offline ? "INTERNAL" : "VALIDATION",
-      e.message,
-    );
+  if (e instanceof CloudError) return new ApiError(e.status === 401 ? "AUTH" : e.status === 404 ? "NOT_FOUND" : e.offline ? "INTERNAL" : "VALIDATION", e.message);
   return new ApiError("INTERNAL", e instanceof Error ? e.message : String(e));
 };
 
 async function devices() {
   const me = await cloud("/api/client/v1/me", { token: token() });
   const mine = deviceId();
-  return me.devices
-    .filter((d) => !d.revokedAt)
-    .map((d) => ({ ...d, current: d.deviceId === mine }))
-    .sort((a, b) => Number(b.current) - Number(a.current) || b.lastSeenAt.localeCompare(a.lastSeenAt));
+  return me.devices.filter((d) => !d.revokedAt).map((d) => ({ ...d, current: d.deviceId === mine })).sort((a, b) => Number(b.current) - Number(a.current) || b.lastSeenAt.localeCompare(a.lastSeenAt));
 }
 
 function compareVersion(a, b) {
@@ -74,11 +67,7 @@ export const cloudHandlers = {
   },
   "billing.createOrder": async ({ planCode, gateway }) => {
     try {
-      return await cloud("/api/client/v1/orders", {
-        method: "POST",
-        body: { planCode, gateway: gateway ?? null },
-        token: token(),
-      });
+      return await cloud("/api/client/v1/orders", { method: "POST", body: { planCode, gateway: gateway ?? null }, token: token() });
     } catch (e) {
       throw fail(e);
     }
@@ -124,13 +113,9 @@ export const cloudHandlers = {
     let r = {};
     try {
       r = await cloud("/api/public/app", { timeoutMs: 8e3 });
-    } catch {}
-    const level =
-      r.announcementLevel === "warn" || r.announcementLevel === "critical" || r.announcementLevel === "info"
-        ? r.announcementLevel
-        : r.announcement
-          ? "info"
-          : null;
+    } catch {
+    }
+    const level = r.announcementLevel === "warn" || r.announcementLevel === "critical" || r.announcementLevel === "info" ? r.announcementLevel : r.announcement ? "info" : null;
     const info = {
       currentVersion: current,
       latestVersion: r.latestVersion ?? null,
@@ -140,7 +125,7 @@ export const cloudHandlers = {
       announcement: r.announcement ?? null,
       announcementLevel: level,
       updateAvailable: !!r.latestVersion && compareVersion(current, r.latestVersion) < 0,
-      updateRequired: !!r.minVersion && compareVersion(current, r.minVersion) < 0,
+      updateRequired: !!r.minVersion && compareVersion(current, r.minVersion) < 0
     };
     appInfoCache = { at: Date.now(), info };
     return info;
@@ -148,5 +133,5 @@ export const cloudHandlers = {
   "system.openExternal": async ({ url }) => {
     if (!/^https?:\/\//i.test(url)) throw new ApiError("VALIDATION", "Chỉ mở được link http(s)");
     await shell.openExternal(url);
-  },
+  }
 };

@@ -8,8 +8,7 @@ import { mediaUrl } from "../../lib/media";
 import { kindMeta, formatDuration } from "./VariantsPanel";
 
 const VIDEO_EXT = /\.(mp4|mov|webm|m4v|mkv)$/i;
-export const videoOf = (item) =>
-  item.kind === "video" || item.kind === "reel" ? (item.mediaPaths.find((p) => VIDEO_EXT.test(p)) ?? null) : null;
+export const videoOf = (item) => item.kind === "video" || item.kind === "reel" ? item.mediaPaths.find((p) => VIDEO_EXT.test(p)) ?? null : null;
 
 export function VideoPreviewDialog({ item, file, onClose }) {
   const showInFolder = useApiMutation("media.showInFolder");
@@ -19,31 +18,23 @@ export function VideoPreviewDialog({ item, file, onClose }) {
       open={!!file}
       onClose={onClose}
       title={item.title}
-      description={[kindMeta[item.kind].label, item.aspect, formatDuration(item.durationSec)]
-        .filter(Boolean)
-        .join(" · ")}
+      description={[kindMeta[item.kind].label, item.aspect, formatDuration(item.durationSec)].filter(Boolean).join(" · ")}
       width={portrait ? 440 : 860}
-      footer={
-        file && (
-          <Button variant="subtle" onClick={() => showInFolder.mutate({ path: file })}>
-            <FolderOpen size={14} />
-            {" Mở thư mục"}
-          </Button>
-        )
-      }
+      footer={file && <Button variant="subtle" onClick={() => showInFolder.mutate({ path: file })}>
+        <FolderOpen size={14} />
+        {" Mở thư mục"}
+      </Button>}
     >
-      {file && (
-        <video
-          key={file}
-          src={mediaUrl(file)}
-          poster={item.thumbnailPath ? mediaUrl(item.thumbnailPath) : void 0}
-          controls={true}
-          autoPlay={true}
-          playsInline={true}
-          className={cn("w-full rounded-lg bg-black object-contain", portrait ? "max-h-[70vh]" : "max-h-[65vh]")}
-        />
-      )}
+      {file && <video
+        key={file}
+        src={mediaUrl(file)}
+        poster={item.thumbnailPath ? mediaUrl(item.thumbnailPath) : void 0}
+        controls={true}
+        autoPlay={true}
+        playsInline={true}
+        className={cn("w-full rounded-lg bg-black object-contain", portrait ? "max-h-[70vh]" : "max-h-[65vh]")}
+      />}
     </Dialog>,
-    document.body,
+    document.body
   );
 }

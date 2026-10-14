@@ -1,18 +1,14 @@
-import ffmpegStatic from "ffmpeg-static";
-import { path } from "ffprobe-static";
 import { app } from "electron";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { eq } from "drizzle-orm";
+import ffmpegStatic from "ffmpeg-static";
+import { path } from "ffprobe-static";
 import { settings } from "../db/schema";
 import { getDb } from "../db/index";
 
-const unpacked = (p) =>
-  p.replace(
-    `app.asar${process.platform === "win32" ? "\\" : "/"}`,
-    `app.asar.unpacked${process.platform === "win32" ? "\\" : "/"}`,
-  );
+const unpacked = (p) => p.replace(`app.asar${process.platform === "win32" ? "\\" : "/"}`, `app.asar.unpacked${process.platform === "win32" ? "\\" : "/"}`);
 
 export function ffmpegPath() {
   const custom = getDb().select().from(settings).where(eq(settings.key, "media.ffmpegPath")).get()?.value;
@@ -38,13 +34,7 @@ export class FfmpegError extends Error {
 
 export function runFfmpeg(args, opts = {}) {
   return new Promise((resolve, reject) => {
-    const full = [
-      "-hide_banner",
-      "-nostdin",
-      "-y",
-      ...(opts.onProgress ? ["-progress", "pipe:1", "-nostats"] : []),
-      ...args,
-    ];
+    const full = ["-hide_banner", "-nostdin", "-y", ...opts.onProgress ? ["-progress", "pipe:1", "-nostats"] : [], ...args];
     const child = spawn(ffmpegPath(), full, { cwd: opts.cwd, windowsHide: true });
     let stderr = "";
     let buf = "";
@@ -80,8 +70,8 @@ export function ffmpegOutput(args) {
   return new Promise((resolve) => {
     const child = spawn(ffmpegPath(), ["-hide_banner", ...args], { windowsHide: true });
     let out = "";
-    child.stdout.on("data", (d) => (out += d.toString()));
-    child.stderr.on("data", (d) => (out += d.toString()));
+    child.stdout.on("data", (d) => out += d.toString());
+    child.stderr.on("data", (d) => out += d.toString());
     child.on("error", (err) => resolve({ code: -1, out: err.message }));
     child.on("close", (code) => resolve({ code: code ?? -1, out }));
   });
@@ -94,13 +84,9 @@ export async function hasAudioStream(file) {
 
 export function probeDuration(file) {
   return new Promise((resolve, reject) => {
-    const child = spawn(
-      ffprobePath(),
-      ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", file],
-      { windowsHide: true },
-    );
+    const child = spawn(ffprobePath(), ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", file], { windowsHide: true });
     let out = "";
-    child.stdout.on("data", (d) => (out += d.toString()));
+    child.stdout.on("data", (d) => out += d.toString());
     child.on("error", (err) => reject(err));
     child.on("close", (code) => {
       const v = Number(out.trim());

@@ -26,6 +26,7 @@ export function storageInfo() {
     const fs = statfsSync(dir);
     diskFreeBytes = fs.bavail * fs.bsize;
     diskTotalBytes = fs.blocks * fs.bsize;
-  } catch {}
+  } catch {
+  }
   return { mediaDir: dir, usedBytes: dirSize(dir), diskFreeBytes, diskTotalBytes };
 }

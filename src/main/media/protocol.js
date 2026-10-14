@@ -1,6 +1,6 @@
-import { pathToFileURL } from "node:url";
 import { protocol, net } from "electron";
 import { resolve, sep, isAbsolute, extname } from "node:path";
+import { pathToFileURL } from "node:url";
 import { currentUser } from "../paths";
 import { contentItems } from "../db/schema";
 import { getDb } from "../db/index";
@@ -9,9 +9,7 @@ import { mediaDir } from "./paths";
 const MEDIA_SCHEME = "omni-media";
 
 export function registerMediaScheme() {
-  protocol.registerSchemesAsPrivileged([
-    { scheme: MEDIA_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
-  ]);
+  protocol.registerSchemesAsPrivileged([{ scheme: MEDIA_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }]);
 }
 
 export function resolveMediaPath(relPath) {
@@ -22,7 +20,7 @@ export function resolveMediaPath(relPath) {
 }
 
 const EXT_MEDIA = new Set([".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov", ".m4v", ".webm"]);
-const norm = (p) => (process.platform === "win32" ? resolve(p).toLowerCase() : resolve(p));
+const norm = (p) => process.platform === "win32" ? resolve(p).toLowerCase() : resolve(p);
 let attached = null;
 
 export function resolveAttachedPath(absPath) {
@@ -40,10 +38,7 @@ export function resolveAttachedPath(absPath) {
 export function handleMediaProtocol() {
   protocol.handle(MEDIA_SCHEME, (req) => {
     const url = new URL(req.url);
-    const abs =
-      url.hostname === "ext"
-        ? resolveAttachedPath(decodeURIComponent(url.pathname.slice(1)))
-        : resolveMediaPath(decodeURIComponent(url.pathname));
+    const abs = url.hostname === "ext" ? resolveAttachedPath(decodeURIComponent(url.pathname.slice(1))) : resolveMediaPath(decodeURIComponent(url.pathname));
     if (!abs) return new Response("Forbidden", { status: 403 });
     return net.fetch(pathToFileURL(abs).toString(), { headers: req.headers });
   });

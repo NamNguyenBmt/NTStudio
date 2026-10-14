@@ -16,12 +16,12 @@ const twMerge = extendTailwindMerge({
             "body-sm",
             "label-md",
             "label-sm",
-            "code",
-          ],
-        },
-      ],
-    },
-  },
+            "code"
+          ]
+        }
+      ]
+    }
+  }
 });
 
 export function cn(...inputs) {

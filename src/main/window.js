@@ -1,7 +1,7 @@
+import { app, nativeTheme, BrowserWindow, shell } from "electron";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { IpcChannel } from "../shared/ipc";
-import { app, nativeTheme, BrowserWindow, shell } from "electron";
 
 const themeFile = () => join(app.getPath("userData"), "ui-theme.json");
 
@@ -23,7 +23,8 @@ export function applyTheme(theme) {
   for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed()) w.setBackgroundColor(windowBackground());
   try {
     writeFileSync(themeFile(), JSON.stringify({ theme }));
-  } catch {}
+  } catch {
+  }
 }
 
 export function createMainWindow({ hidden = false } = {}) {
@@ -40,7 +41,7 @@ export function createMainWindow({ hidden = false } = {}) {
     backgroundColor: windowBackground(),
     autoHideMenuBar: true,
     // Bản cài dùng icon gắn trong .exe (electron-builder lấy từ resources/icon.png); khi dev lấy thẳng file
-    ...(app.isPackaged ? {} : { icon: join(__dirname, "../../resources/icon.png") }),
+    ...app.isPackaged ? {} : { icon: join(__dirname, "../../resources/icon.png") },
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,
@@ -48,8 +49,8 @@ export function createMainWindow({ hidden = false } = {}) {
       sandbox: true,
       webSecurity: true,
       // Từ điển chính tả của Chromium không hỗ trợ tiếng Việt → gạch đỏ toàn bộ nội dung
-      spellcheck: false,
-    },
+      spellcheck: false
+    }
   });
   const sendState = () => {
     if (win.isDestroyed()) return;

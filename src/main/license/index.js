@@ -1,12 +1,12 @@
-import { FEATURE_LABEL, normalizeFeatures } from "../../shared/features";
 import { app } from "electron";
 import os from "node:os";
+import { createPublicKey, verify } from "node:crypto";
 import { sql, inArray } from "drizzle-orm";
 import { channels } from "../db/schema";
 import { getDb } from "../db/index";
-import { createPublicKey, verify } from "node:crypto";
 import { CloudError, cloud, deviceId, readCloudSession, patchCloudSession } from "../cloud/client";
 import { bindCloudSession, syncAppConfig } from "../cloud/app-config";
+import { FEATURE_LABEL, normalizeFeatures } from "../../shared/features";
 
 const LICENSE_KEY_ID = "p5JDXbsSf9Pqaw_JsbE5bUWGRH_rhENAbYP4Zzp4jQE";
 
@@ -22,7 +22,7 @@ CROlvxl+8TnaGHdITwnW1g5nacIe9mVFVGNxYsKedxVGOsxugThPi8AfphBF4U3K
 
 const HEARTBEAT_MS = 6 * 36e5;
 let publicKey = null;
-const key = () => (publicKey ??= createPublicKey(process.env.OMNI_LICENSE_PUBLIC_KEY ?? LICENSE_PUBLIC_KEY));
+const key = () => publicKey ??= createPublicKey(process.env.OMNI_LICENSE_PUBLIC_KEY ?? LICENSE_PUBLIC_KEY);
 const b64 = (s) => Buffer.from(s, "base64url");
 
 export function verifyLicenseToken(token, now = Date.now()) {
@@ -78,13 +78,10 @@ function set(patch) {
   stateListeners.forEach((l) => l());
 }
 
-bindCloudSession(() => ({
-  userId: state?.localUserId ?? null,
-  token: state ? (readCloudSession(state.localUserId)?.customerToken ?? null) : null,
-}));
+bindCloudSession(() => ({ userId: state?.localUserId ?? null, token: state ? readCloudSession(state.localUserId)?.customerToken ?? null : null }));
 
 export function cloudCustomerToken() {
-  return state ? (readCloudSession(state.localUserId)?.customerToken ?? null) : null;
+  return state ? readCloudSession(state.localUserId)?.customerToken ?? null : null;
 }
 
 export function licenseUsable() {
@@ -95,16 +92,11 @@ export function hasFeature(code) {
   return normalizeFeatures(state?.claims?.features).includes(code);
 }
 
-export const featureLockedMessage = (code) =>
-  `${FEATURE_LABEL[code]} không có trong gói ${state?.claims?.planName ?? "hiện tại"} – nâng cấp gói để mở khóa`;
+export const featureLockedMessage = (code) => `${FEATURE_LABEL[code]} không có trong gói ${state?.claims?.planName ?? "hiện tại"} – nâng cấp gói để mở khóa`;
 
 export function licenseLimits() {
   const c = state?.claims;
-  return {
-    maxChannels: c?.maxChannels ?? null,
-    flowThreads: c?.flowThreads ?? null,
-    maxDevices: c?.maxDevices ?? null,
-  };
+  return { maxChannels: c?.maxChannels ?? null, flowThreads: c?.flowThreads ?? null, maxDevices: c?.maxDevices ?? null };
 }
 
 export function licenseView() {
@@ -125,19 +117,13 @@ export function licenseView() {
     features: normalizeFeatures(c?.features),
     deviceId: deviceId(),
     lastCheckedAt: state?.lastCheckedAt ? new Date(state.lastCheckedAt) : null,
-    lastOnlineAt: state?.lastOnlineAt ? new Date(state.lastOnlineAt) : null,
+    lastOnlineAt: state?.lastOnlineAt ? new Date(state.lastOnlineAt) : null
   };
 }
 
 function activeChannelCount() {
   try {
-    return Number(
-      getDb()
-        .select({ n: sql`count(*)` })
-        .from(channels)
-        .where(inArray(channels.status, ["active", "error"]))
-        .get()?.n ?? 0,
-    );
+    return Number(getDb().select({ n: sql`count(*)` }).from(channels).where(inArray(channels.status, ["active", "error"])).get()?.n ?? 0);
   } catch {
     return void 0;
   }
@@ -148,7 +134,7 @@ const deviceBody = () => ({
   name: os.hostname().slice(0, 120),
   os: `${os.type()} ${os.release()}`.slice(0, 80),
   appVersion: app.getVersion(),
-  activeChannels: activeChannelCount(),
+  activeChannels: activeChannelCount()
 });
 
 function applyError(e) {
@@ -157,19 +143,7 @@ function applyError(e) {
   if (err.offline) {
     const claims = verifyLicenseToken(readCloudSession(state.localUserId)?.licenseToken);
     set(
-      claims
-        ? {
-            claims,
-            status: "offline",
-            message: "Đang dùng ngoại tuyến – app sẽ tự kiểm tra lại license khi có mạng",
-            lastCheckedAt: now,
-          }
-        : {
-            claims: null,
-            status: "expired",
-            message: "Cần kết nối mạng để kiểm tra license (đã quá thời gian dùng ngoại tuyến)",
-            lastCheckedAt: now,
-          },
+      claims ? { claims, status: "offline", message: "Đang dùng ngoại tuyến – app sẽ tự kiểm tra lại license khi có mạng", lastCheckedAt: now } : { claims: null, status: "expired", message: "Cần kết nối mạng để kiểm tra license (đã quá thời gian dùng ngoại tuyến)", lastCheckedAt: now }
     );
     return;
   }
@@ -177,39 +151,21 @@ function applyError(e) {
     NO_SUBSCRIPTION: "no_subscription",
     DEVICE_LIMIT: "device_limit",
     DEVICE_REVOKED: "revoked",
-    ACCOUNT_LOCKED: "locked",
+    ACCOUNT_LOCKED: "locked"
   };
   if (err.status === 401 || err.code === "UNAUTHORIZED") {
     const claims = verifyLicenseToken(readCloudSession(state.localUserId)?.licenseToken);
-    set({
-      claims,
-      status: claims ? "active" : "relogin",
-      needRelogin: true,
-      message: "Phiên đăng nhập Omnira đã hết hạn – đăng xuất rồi đăng nhập lại",
-      lastCheckedAt: now,
-    });
+    set({ claims, status: claims ? "active" : "relogin", needRelogin: true, message: "Phiên đăng nhập Omnira đã hết hạn – đăng xuất rồi đăng nhập lại", lastCheckedAt: now });
     return;
   }
-  set({
-    claims: null,
-    status: map[err.code] ?? "expired",
-    message: err.message,
-    lastCheckedAt: now,
-    lastOnlineAt: now,
-  });
+  set({ claims: null, status: map[err.code] ?? "expired", message: err.message, lastCheckedAt: now, lastOnlineAt: now });
 }
 
 function accept(token) {
   const now = Date.now();
   const claims = verifyLicenseToken(token);
   if (!claims) {
-    set({
-      claims: null,
-      status: "expired",
-      message: "Token license không hợp lệ (sai chữ ký / sai máy) – liên hệ hỗ trợ",
-      lastCheckedAt: now,
-      lastOnlineAt: now,
-    });
+    set({ claims: null, status: "expired", message: "Token license không hợp lệ (sai chữ ký / sai máy) – liên hệ hỗ trợ", lastCheckedAt: now, lastOnlineAt: now });
     return;
   }
   patchCloudSession(state.localUserId, { licenseToken: token });
@@ -271,15 +227,13 @@ export function startLicense(localUserId) {
     message: null,
     needRelogin: false,
     lastCheckedAt: null,
-    lastOnlineAt: null,
+    lastOnlineAt: null
   };
   if (claims) listeners.forEach((l) => l(true));
   void refreshLicense();
   timer = setInterval(() => {
-    if (state?.claims && state.claims.exp * 1e3 <= Date.now())
-      set({ claims: null, status: "expired", message: "License hết hạn dùng ngoại tuyến – cần kết nối mạng" });
-    if (!state?.lastCheckedAt || Date.now() - state.lastCheckedAt >= HEARTBEAT_MS || !licenseUsable())
-      void refreshLicense();
+    if (state?.claims && state.claims.exp * 1e3 <= Date.now()) set({ claims: null, status: "expired", message: "License hết hạn dùng ngoại tuyến – cần kết nối mạng" });
+    if (!state?.lastCheckedAt || Date.now() - state.lastCheckedAt >= HEARTBEAT_MS || !licenseUsable()) void refreshLicense();
   }, 10 * 6e4);
 }
 
@@ -293,12 +247,7 @@ export function stopLicense() {
 export async function deactivateLicense(customerToken) {
   if (!customerToken) return;
   try {
-    await cloud("/api/client/v1/license/deactivate", {
-      method: "POST",
-      body: { deviceId: deviceId() },
-      token: customerToken,
-      timeoutMs: 6e3,
-    });
+    await cloud("/api/client/v1/license/deactivate", { method: "POST", body: { deviceId: deviceId() }, token: customerToken, timeoutMs: 6e3 });
   } catch (e) {
     console.warn("[license] không trả được chỗ máy khi đăng xuất", e instanceof Error ? e.message : e);
   }

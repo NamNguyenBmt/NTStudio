@@ -12,5 +12,5 @@ export const ADAPTERS = {
   replicate: replicateAdapter,
   pexels: pexelsAdapter,
   pixabay: pixabayAdapter,
-  fal: falAdapter,
+  fal: falAdapter
 };

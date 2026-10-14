@@ -1,15 +1,11 @@
 import { dialogueLanguageEn } from "../../shared/film";
 
-const framing = (a) => (a === "16:9" ? "horizontal 16:9" : a === "1:1" ? "square 1:1" : "vertical 9:16");
-const styleLine = (f) => (f.style.trim() ? ` Visual style: ${f.style.trim()}.` : "");
+const framing = (a) => a === "16:9" ? "horizontal 16:9" : a === "1:1" ? "square 1:1" : "vertical 9:16";
+const styleLine = (f) => f.style.trim() ? ` Visual style: ${f.style.trim()}.` : "";
 const NO_TEXT = " No text, no captions, no logos, no watermark.";
 
 export function characterSheetPrompt(look, style) {
-  return (
-    `Character reference sheet for a film, showing ONE person: ${look.trim()}. Layout side by side on a plain light-grey studio background: one full-body front view, then face close-ups from the front, three-quarter and profile angles. Identical face, hairstyle and outfit in every view, neutral expression, even soft lighting.` +
-    (style.trim() ? ` Visual style: ${style.trim()}.` : "") +
-    NO_TEXT
-  );
+  return `Character reference sheet for a film, showing ONE person: ${look.trim()}. Layout side by side on a plain light-grey studio background: one full-body front view, then face close-ups from the front, three-quarter and profile angles. Identical face, hairstyle and outfit in every view, neutral expression, even soft lighting.` + (style.trim() ? ` Visual style: ${style.trim()}.` : "") + NO_TEXT;
 }
 
 export function characterPrompt(f, a) {
@@ -30,25 +26,17 @@ export function shotPrompt(f, shot, chars, loc) {
     `Action: ${shot.description.trim() || shot.summary}.`,
     loc ? `Location: ${loc.description.trim() || loc.name}.` : "",
     chars.length ? `Characters: ${chars.map((c) => `${c.name} – ${c.description.trim()}`).join("; ")}.` : "",
-    refs.length
-      ? `Use the attached references (${refs.join("; ")}): keep every character's face, hair and outfit exactly as in their sheet, and match the location.`
-      : "",
+    refs.length ? `Use the attached references (${refs.join("; ")}): keep every character's face, hair and outfit exactly as in their sheet, and match the location.` : "",
     styleLine(f).trim(),
-    "Natural poses, realistic proportions and hands." + NO_TEXT,
-  ]
-    .filter(Boolean)
-    .join(" ");
+    "Natural poses, realistic proportions and hands." + NO_TEXT
+  ].filter(Boolean).join(" ");
 }
 
 export function parseDialogue(text) {
-  return (text ?? "")
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((l) => {
-      const m = l.match(/^([^:]{1,40}):\s*(.+)$/);
-      return m ? { speaker: m[1].trim(), line: m[2].trim() } : { speaker: null, line: l };
-    });
+  return (text ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+    const m = l.match(/^([^:]{1,40}):\s*(.+)$/);
+    return m ? { speaker: m[1].trim(), line: m[2].trim() } : { speaker: null, line: l };
+  });
 }
 
 export function videoPrompt(f, shot, withAudio, chars = []) {
@@ -60,16 +48,12 @@ export function videoPrompt(f, shot, withAudio, chars = []) {
   };
   return [
     // Lời thoại đặt ĐẦU prompt (model bám phần đầu) – nói đúng câu, đúng ngôn ngữ, không tự chế lời
-    withAudio && lines.length
-      ? `Dialogue in ${lang}, lip-synced, spoken exactly as written: ${lines.map((d) => (d.speaker ? `${d.speaker}${voiceOf(d.speaker)} says "${d.line}"` : `"${d.line}"`)).join("; ")}. No other speech${lang !== "English" ? ", no English" : ""}.`
-      : "",
+    withAudio && lines.length ? `Dialogue in ${lang}, lip-synced, spoken exactly as written: ${lines.map((d) => d.speaker ? `${d.speaker}${voiceOf(d.speaker)} says "${d.line}"` : `"${d.line}"`).join("; ")}. No other speech${lang !== "English" ? ", no English" : ""}.` : "",
     `${shot.description.trim() || shot.summary}.`,
     shot.camera.trim() ? `Camera: ${shot.camera.trim()}.` : "",
     withAudio ? "Natural ambient sound and foley matching the scene, no background music." : "",
     "Keep every character, outfit and the location exactly as in the first frame; smooth, realistic motion.",
     styleLine(f).trim(),
-    "No on-screen text, no subtitles, no watermark.",
-  ]
-    .filter(Boolean)
-    .join(" ");
+    "No on-screen text, no subtitles, no watermark."
+  ].filter(Boolean).join(" ");
 }

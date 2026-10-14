@@ -1,11 +1,9 @@
 const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
-
 const integer = new Intl.NumberFormat("en-US");
 export const formatCompact = (n) => compact.format(n);
 export const formatInt = (n) => integer.format(n);
 export const formatPct = (n, digits = 1) => `${n.toFixed(digits)}%`;
 export const formatSignedPct = (n) => `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
-
 const rtf = new Intl.RelativeTimeFormat("vi", { numeric: "auto" });
 
 export function formatRelative(date, now = Date.now()) {

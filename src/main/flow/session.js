@@ -1,25 +1,14 @@
-import { chromium } from "playwright-core";
-import { flowImagesEnabled } from "./image";
 import { existsSync, mkdirSync, readFileSync, rmSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
-import { currentUser, userDir } from "../paths";
 import { eq } from "drizzle-orm";
+import { chromium } from "playwright-core";
+import { currentUser, userDir } from "../paths";
 import { settings } from "../db/schema";
 import { getDb } from "../db/index";
+import { newProjectButton, promptCandidates, visible, clickFirst, iconButton, flowModel, slotPages, slotConfig, running, waiting } from "./video";
+import { flowImagesEnabled } from "./image";
 import { licenseLimits } from "../license/index";
-import {
-  newProjectButton,
-  promptCandidates,
-  visible,
-  clickFirst,
-  iconButton,
-  flowModel,
-  slotPages,
-  slotConfig,
-  running,
-  waiting,
-} from "./video";
 
 export const FLOW_URL = process.env.OMNI_FLOW_URL || "https://labs.google/fx/tools/flow";
 export const GEN_TIMEOUT_MS = 10 * 6e4;
@@ -31,51 +20,22 @@ export function getSetting(key, fallback) {
 }
 
 export function putSetting(key, value) {
-  getDb()
-    .insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } })
-    .run();
+  getDb().insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } }).run();
 }
 
-export const veoSource = () => (getSetting("veo.source", "api") === "flow" ? "flow" : "api");
+export const veoSource = () => getSetting("veo.source", "api") === "flow" ? "flow" : "api";
 export const setVeoSource = (s) => putSetting("veo.source", s);
-
 export const loginState = () => getSetting("flow.login", { loggedIn: false, email: null, checkedAt: null });
-
 const creditsState = () => getSetting("flow.credits", { credits: null, tier: null, at: null });
-
 export const flowHidden = () => getSetting("flow.hidden", true) !== false;
 const flowMaxThreads = () => Math.min(4, Math.max(1, licenseLimits().flowThreads ?? 4));
-export const flowConcurrency = () =>
-  Math.min(flowMaxThreads(), Math.max(1, Number(getSetting("flow.concurrency", 2)) || 2));
+export const flowConcurrency = () => Math.min(flowMaxThreads(), Math.max(1, Number(getSetting("flow.concurrency", 2)) || 2));
 export const setFlowConcurrency = (n) => putSetting("flow.concurrency", Math.min(4, Math.max(1, Math.round(n))));
 export const flowReady = () => veoSource() === "flow" && loginState().loggedIn;
 
 function findChrome() {
   const env = process.env;
-  const list =
-    process.platform === "win32"
-      ? [env.PROGRAMFILES, env["PROGRAMFILES(X86)"], env.LOCALAPPDATA]
-          .filter((b) => !!b)
-          .flatMap((b) => [join(b, "Google", "Chrome", "Application", "chrome.exe")])
-          .concat(
-            [env["PROGRAMFILES(X86)"], env.PROGRAMFILES]
-              .filter((b) => !!b)
-              .map((b) => join(b, "Microsoft", "Edge", "Application", "msedge.exe")),
-          )
-      : process.platform === "darwin"
-        ? [
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-          ]
-        : [
-            "/usr/bin/google-chrome",
-            "/usr/bin/google-chrome-stable",
-            "/usr/bin/chromium",
-            "/usr/bin/chromium-browser",
-            "/usr/bin/microsoft-edge",
-          ];
+  const list = process.platform === "win32" ? [env.PROGRAMFILES, env["PROGRAMFILES(X86)"], env.LOCALAPPDATA].filter((b) => !!b).flatMap((b) => [join(b, "Google", "Chrome", "Application", "chrome.exe")]).concat([env["PROGRAMFILES(X86)"], env.PROGRAMFILES].filter((b) => !!b).map((b) => join(b, "Microsoft", "Edge", "Application", "msedge.exe"))) : process.platform === "darwin" ? ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"] : ["/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/microsoft-edge"];
   return list.find((p) => existsSync(p)) ?? null;
 }
 
@@ -101,8 +61,7 @@ export async function ensureChrome() {
   const user = currentUser();
   if (!user) throw new Error("Chưa đăng nhập app");
   if (chrome?.user === user && chrome.browser.isConnected()) return chrome.browser;
-  if (loginProc)
-    throw new Error("Cửa sổ đăng nhập Google Flow đang mở – đăng nhập xong hãy đóng cửa sổ Chrome đó rồi thử lại");
+  if (loginProc) throw new Error("Cửa sổ đăng nhập Google Flow đang mở – đăng nhập xong hãy đóng cửa sổ Chrome đó rồi thử lại");
   await closeFlowChrome();
   const dir = profileDir();
   mkdirSync(dir, { recursive: true });
@@ -129,17 +88,17 @@ export async function ensureChrome() {
       "--lang=en-US",
       "--window-size=1280,900",
       // Chạy ẩn: đặt cửa sổ ngoài màn hình; vẫn là Chrome có giao diện bình thường (không headless)
-      ...(flowHidden() ? [OFFSCREEN_ARG] : []),
+      ...flowHidden() ? [OFFSCREEN_ARG] : [],
       // Cửa sổ bị che / ngoài màn hình vẫn chạy đủ tốc độ (Chrome mặc định giảm tốc tab nền)
       "--disable-background-timer-throttling",
       "--disable-renderer-backgrounding",
       "--disable-backgrounding-occluded-windows",
-      "about:blank",
+      "about:blank"
     ],
-    { stdio: "ignore" },
+    { stdio: "ignore" }
   );
   let exited = false;
-  proc.once("exit", () => (exited = true));
+  proc.once("exit", () => exited = true);
   let port = 0;
   for (let i = 0; i < 60 && !port && !exited; i++) {
     await sleep(500);
@@ -148,9 +107,7 @@ export async function ensureChrome() {
   const b = port ? await connect(port, 20) : null;
   if (!b) {
     if (!exited) proc.kill();
-    throw new Error(
-      "Không nối được với Chrome. Nếu cửa sổ Chrome của Google Flow đang mở sẵn, hãy đóng nó rồi thử lại.",
-    );
+    throw new Error("Không nối được với Chrome. Nếu cửa sổ Chrome của Google Flow đang mở sẵn, hãy đóng nó rồi thử lại.");
   }
   chrome = { user, browser: b, proc };
   b.on("disconnected", () => chrome?.browser === b && (chrome = null));
@@ -159,7 +116,6 @@ export async function ensureChrome() {
 }
 
 const OFFSCREEN = { left: -32e3, top: -32e3 };
-
 const OFFSCREEN_ARG = `--window-position=${OFFSCREEN.left},${OFFSCREEN.top}`;
 
 export async function placeWindows(hidden) {
@@ -174,12 +130,10 @@ export async function placeWindows(hidden) {
       if (seen.has(windowId)) continue;
       seen.add(windowId);
       await s.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
-      await s.send("Browser.setWindowBounds", {
-        windowId,
-        bounds: hidden ? OFFSCREEN : { left: 80, top: 60, width: 1280, height: 900 },
-      });
+      await s.send("Browser.setWindowBounds", { windowId, bounds: hidden ? OFFSCREEN : { left: 80, top: 60, width: 1280, height: 900 } });
       await s.detach();
-    } catch {}
+    } catch {
+    }
   }
 }
 
@@ -207,7 +161,8 @@ export async function closeFlowChrome() {
   try {
     const s = await c.browser.newBrowserCDPSession();
     await s.send("Browser.close").catch(() => void 0);
-  } catch {}
+  } catch {
+  }
   await c.browser.close().catch(() => void 0);
   c.proc?.kill();
 }
@@ -224,20 +179,15 @@ export async function openFlowLogin() {
   }
   const dir = profileDir();
   mkdirSync(dir, { recursive: true });
-  const proc = spawn(exe, [`--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", FLOW_URL], {
-    stdio: "ignore",
-  });
+  const proc = spawn(exe, [`--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", FLOW_URL], { stdio: "ignore" });
   loginProc = proc;
   proc.once("exit", () => {
     if (loginProc !== proc) return;
     loginProc = null;
-    loginCheck = sleep(1500)
-      .then(() => checkFlowLogin())
-      .catch((err) => console.warn("[flow] kiểm tra đăng nhập lỗi", err))
-      .finally(() => {
-        loginCheck = null;
-        void closeFlowChrome();
-      });
+    loginCheck = sleep(1500).then(() => checkFlowLogin()).catch((err) => console.warn("[flow] kiểm tra đăng nhập lỗi", err)).finally(() => {
+      loginCheck = null;
+      void closeFlowChrome();
+    });
   });
   proc.once("error", () => loginProc === proc && (loginProc = null));
 }
@@ -245,29 +195,20 @@ export async function openFlowLogin() {
 export async function readLogin(page) {
   const at = Date.now();
   if (/accounts\.google\.com/.test(page.url())) return { loggedIn: false, email: null, checkedAt: at };
-  const s = await page
-    .evaluate(async () => {
-      try {
-        const r = await fetch("/fx/api/auth/session", { credentials: "include" });
-        return r.ok ? await r.json() : null;
-      } catch {
-        return null;
-      }
-    })
-    .catch(() => null);
+  const s = await page.evaluate(async () => {
+    try {
+      const r = await fetch("/fx/api/auth/session", { credentials: "include" });
+      return r.ok ? await r.json() : null;
+    } catch {
+      return null;
+    }
+  }).catch(() => null);
   if (s?.user) return { loggedIn: true, email: s.user.email ?? s.user.name ?? null, checkedAt: at };
-  const account = await page
-    .locator('a[aria-label*="@"], [role=button][aria-label*="@"]')
-    .first()
-    .getAttribute("aria-label", { timeout: 5e3 })
-    .catch(() => null);
+  const account = await page.locator('a[aria-label*="@"], [role=button][aria-label*="@"]').first().getAttribute("aria-label", { timeout: 5e3 }).catch(() => null);
   const email = account?.match(/[\w.+-]+@[\w-]+\.[\w.]+/)?.[0];
   if (email) return { loggedIn: true, email, checkedAt: at };
-  const signIn = await page
-    .getByRole("button", { name: /sign in|đăng nhập/i })
-    .or(page.getByRole("link", { name: /sign in|đăng nhập/i }))
-    .count();
-  const app = (await newProjectButton(page).count()) + (await promptCandidates(page).count());
+  const signIn = await page.getByRole("button", { name: /sign in|đăng nhập/i }).or(page.getByRole("link", { name: /sign in|đăng nhập/i })).count();
+  const app = await newProjectButton(page).count() + await promptCandidates(page).count();
   return { loggedIn: signIn === 0 && app > 0, email: null, checkedAt: at };
 }
 
@@ -276,13 +217,7 @@ export async function checkFlowLogin() {
   const page = await ctx.newPage();
   try {
     await page.goto(FLOW_URL, { waitUntil: "domcontentloaded", timeout: 6e4 });
-    await visible(
-      page
-        .locator('a[aria-label*="@"]')
-        .or(newProjectButton(page))
-        .or(page.getByRole("link", { name: /sign in|đăng nhập/i })),
-      2e4,
-    );
+    await visible(page.locator('a[aria-label*="@"]').or(newProjectButton(page)).or(page.getByRole("link", { name: /sign in|đăng nhập/i })), 2e4);
     const st = await readLogin(page);
     putSetting("flow.login", st);
     if (st.loggedIn) await refreshCredits(page);
@@ -300,31 +235,23 @@ export async function resetFlowProfile() {
   putSetting("flow.credits", { credits: null, tier: null, at: null });
 }
 
-const accountButton = (page) =>
-  page.locator(".header-user-button").or(page.getByRole("button", { name: /thông tin về tài khoản|account info/i }));
-
+const accountButton = (page) => page.locator(".header-user-button").or(page.getByRole("button", { name: /thông tin về tài khoản|account info/i }));
 const CREDIT_TEXT = /(\d[\d.,\s]*)\s*(?:tín dụng|(?:google flow |ai )?credits?\b)/i;
 
 async function readCredits(page) {
   const btn = accountButton(page).first();
-  if (!(await visible(btn, 5e3))) return null;
-  const tierLabel = await page
-    .locator('[aria-label$=" tier" i]')
-    .first()
-    .getAttribute("aria-label", { timeout: 1e3 })
-    .catch(() => null);
+  if (!await visible(btn, 5e3)) return null;
+  const tierLabel = await page.locator('[aria-label$=" tier" i]').first().getAttribute("aria-label", { timeout: 1e3 }).catch(() => null);
   const tier = tierLabel?.replace(/\s*tier$/i, "").trim() || null;
   await btn.click({ timeout: 5e3 });
   try {
     const line = page.getByText(CREDIT_TEXT).first();
-    if (!(await visible(line, 8e3))) return null;
-    const m = ((await line.textContent({ timeout: 2e3 })) ?? "").match(CREDIT_TEXT);
+    if (!await visible(line, 8e3)) return null;
+    const m = (await line.textContent({ timeout: 2e3 }) ?? "").match(CREDIT_TEXT);
     const credits = m ? Number(m[1].replace(/\D/g, "")) : NaN;
     return Number.isFinite(credits) ? { credits, tier, at: Date.now() } : null;
   } finally {
-    const closed = await clickFirst([page.locator("button.close-btn"), iconButton(page, "close")], 1e3).catch(
-      () => false,
-    );
+    const closed = await clickFirst([page.locator("button.close-btn"), iconButton(page, "close")], 1e3).catch(() => false);
     if (!closed) await page.keyboard.press("Escape").catch(() => void 0);
     await sleep(400);
   }
@@ -358,7 +285,8 @@ export function flowStatus() {
   try {
     profile = existsSync(profileDir());
     diagnostics = existsSync(diagRoot()) ? readdirSync(diagRoot()).length : 0;
-  } catch {}
+  } catch {
+  }
   return {
     source: veoSource(),
     model: flowModel(),
@@ -380,6 +308,6 @@ export function flowStatus() {
     maxConcurrency: flowMaxThreads(),
     hidden: flowHidden(),
     images: flowImagesEnabled(),
-    diagnosticsDir: diagnostics ? diagRoot() : null,
+    diagnosticsDir: diagnostics ? diagRoot() : null
   };
 }

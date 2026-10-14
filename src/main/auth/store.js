@@ -1,8 +1,8 @@
 import { safeStorage } from "electron";
 import { readFileSync, mkdirSync, writeFileSync, renameSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { authRoot } from "../paths";
 import { scrypt as cryptoScrypt, randomBytes, timingSafeEqual, randomUUID, createHash } from "node:crypto";
+import { authRoot } from "../paths";
 
 const authDir = () => authRoot();
 const storeFile = () => join(authDir(), "users.json");
@@ -12,7 +12,8 @@ export function readStore() {
   try {
     const s = JSON.parse(readFileSync(storeFile(), "utf8"));
     if (s && Array.isArray(s.users)) return s;
-  } catch {}
+  } catch {
+  }
   return { version: 1, users: [] };
 }
 
@@ -45,9 +46,7 @@ const P = 1;
 const KEYLEN = 64;
 
 function scrypt(password, salt, opts) {
-  return new Promise((resolve, reject) =>
-    cryptoScrypt(password.normalize("NFKC"), salt, KEYLEN, opts, (err, key) => (err ? reject(err) : resolve(key))),
-  );
+  return new Promise((resolve, reject) => cryptoScrypt(password.normalize("NFKC"), salt, KEYLEN, opts, (err, key) => err ? reject(err) : resolve(key)));
 }
 
 export async function hashPassword(password) {
@@ -60,12 +59,7 @@ export async function verifyPassword(password, stored) {
   const [algo, n, r, p, salt, hash] = stored.split("$");
   if (algo !== "scrypt" || !salt || !hash) return false;
   const expected = Buffer.from(hash, "base64");
-  const key = await scrypt(password, Buffer.from(salt, "base64"), {
-    N: Number(n),
-    r: Number(r),
-    p: Number(p),
-    maxmem: 128 * Number(n) * Number(r) * 2,
-  });
+  const key = await scrypt(password, Buffer.from(salt, "base64"), { N: Number(n), r: Number(r), p: Number(p), maxmem: 128 * Number(n) * Number(r) * 2 });
   return key.length === expected.length && timingSafeEqual(key, expected);
 }
 
@@ -81,7 +75,7 @@ export async function createUser(input) {
     provider: input.provider ?? "local",
     cloudId: input.cloudId ?? null,
     createdAt: Date.now(),
-    lastLoginAt: null,
+    lastLoginAt: null
   };
   s.users.push(user);
   writeStore(s);
@@ -104,7 +98,8 @@ export function forgetSession(userId) {
   if (userId) {
     try {
       updateUser(userId, { rememberTokenHash: null, rememberExpiresAt: null });
-    } catch {}
+    } catch {
+    }
   }
 }
 

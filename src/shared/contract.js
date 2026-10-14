@@ -2,21 +2,14 @@ import { z } from "zod";
 
 const platform = z.enum(["facebook", "tiktok", "instagram", "youtube"]);
 const id = z.string().min(1);
-
 const optionalWorkspace = z.object({ workspaceId: id.nullish() }).default({});
-
 const none = z.void().or(z.undefined());
-
 const byId = z.object({ id });
-
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 const WorkspaceInput = z.object({
   name: z.string().trim().min(1).max(80),
-  color: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/)
-    .optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   icon: z.string().max(40).nullish(),
   description: z.string().max(500).nullish(),
   brandVoice: z.string().max(2e3).nullish(),
@@ -28,7 +21,7 @@ const WorkspaceInput = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
   aiBudgetUsd: z.number().min(0).max(1e5).nullish(),
   goldenHours: z.array(z.object({ start: hhmm, end: hhmm, weight: z.number().min(0).max(1) })).optional(),
-  aiTokenQuota: z.number().int().positive().nullish(),
+  aiTokenQuota: z.number().int().positive().nullish()
 });
 
 const ProxyInput = z.object({
@@ -39,7 +32,7 @@ const ProxyInput = z.object({
   port: z.number().int().min(1).max(65535),
   username: z.string().max(255).nullish(),
   country: z.string().max(8).nullish(),
-  kind: z.enum(["residential", "datacenter", "mobile", "isp"]).nullish(),
+  kind: z.enum(["residential", "datacenter", "mobile", "isp"]).nullish()
 });
 
 const AccountInput = z.object({
@@ -50,7 +43,7 @@ const AccountInput = z.object({
   externalId: z.string().trim().max(100).nullish(),
   proxyId: id.nullish(),
   twoFactorEnabled: z.boolean().optional(),
-  note: z.string().max(500).nullish(),
+  note: z.string().max(500).nullish()
 });
 
 const PageInput = z.object({
@@ -58,7 +51,7 @@ const PageInput = z.object({
   name: z.string().trim().min(1).max(160),
   externalId: z.string().trim().max(100).nullish(),
   role: z.enum(["admin", "editor", "moderator", "advertiser"]).nullish(),
-  nicheTag: z.string().max(60).nullish(),
+  nicheTag: z.string().max(60).nullish()
 });
 
 const ProjectInput = z.object({
@@ -84,16 +77,7 @@ const ProjectInput = z.object({
   /** Ảnh tham chiếu chung (sản phẩm, logo, nhân vật) – đường dẫn media/uploads do media.importClips trả về */
   referenceImages: z.array(z.string().max(300)).max(6).optional(),
   /** Video dài: dàn ý theo hồi (sửa tên / tóm tắt / thời lượng hồi) */
-  acts: z
-    .array(
-      z.object({
-        title: z.string().trim().min(1).max(120),
-        summary: z.string().max(800),
-        targetSec: z.number().int().min(10).max(900),
-      }),
-    )
-    .max(10)
-    .nullish(),
+  acts: z.array(z.object({ title: z.string().trim().min(1).max(120), summary: z.string().max(800), targetSec: z.number().int().min(10).max(900) })).max(10).nullish()
 });
 
 const SceneInput = z.object({
@@ -118,7 +102,7 @@ const SceneInput = z.object({
   startImage: z.string().max(300).nullish(),
   endImage: z.string().max(300).nullish(),
   /** Ảnh tham chiếu riêng của cảnh (≤ 3); null = tự động */
-  sceneRefs: z.array(z.string().max(300)).max(3).nullish(),
+  sceneRefs: z.array(z.string().max(300)).max(3).nullish()
 });
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày dạng YYYY-MM-DD");
@@ -130,17 +114,7 @@ const SeriesInput = z.object({
   genre: z.string().trim().max(80).nullish(),
   visualStyle: z.string().trim().max(400).nullish(),
   /** 30/60/90 giây (phim ngắn) hoặc 3–15 phút (viết theo hồi) */
-  episodeLengthSec: z
-    .union([
-      z.literal(30),
-      z.literal(60),
-      z.literal(90),
-      z.literal(180),
-      z.literal(300),
-      z.literal(600),
-      z.literal(900),
-    ])
-    .optional(),
+  episodeLengthSec: z.union([z.literal(30), z.literal(60), z.literal(90), z.literal(180), z.literal(300), z.literal(600), z.literal(900)]).optional(),
   ttsProvider: z.string().max(40).optional(),
   narratorVoiceId: z.string().max(120).nullish(),
   renderMode: z.enum(["stock", "semi_ai", "full_ai"]).optional(),
@@ -149,7 +123,7 @@ const SeriesInput = z.object({
   productionMode: z.enum(["video", "film"]).optional(),
   /** Series kiểu Phim: ngôn ngữ thoại, ghi chú thêm (tiếng Việt được) */
   dialogueLanguage: z.string().trim().min(1).max(60).optional(),
-  notes: z.string().max(2e3).nullish(),
+  notes: z.string().max(2e3).nullish()
 });
 
 const ContentInput = z.object({
@@ -163,14 +137,14 @@ const ContentInput = z.object({
   /** Bình luận đầu tiên tự đăng sau khi bài lên (Facebook, Instagram) */
   firstComment: z.string().max(2e3).nullish(),
   /** File ảnh/video đính kèm: đường dẫn tuyệt đối (chọn qua system.pickMedia) hoặc tương đối thư mục media */
-  mediaPaths: z.array(z.string().min(1).max(1e3)).max(10).optional(),
+  mediaPaths: z.array(z.string().min(1).max(1e3)).max(10).optional()
 });
 
 const def = () => (input) => ({ input, output: void 0 });
-
 const contentStatus = z.enum(["draft", "ready", "scheduled", "published", "failed"]);
 const email = z.string().trim().toLowerCase().email("Email không hợp lệ").max(160);
 const password = z.string().min(8, "Mật khẩu tối thiểu 8 ký tự").max(200);
+
 export const PUBLIC_ENDPOINTS = new Set([
   "auth.state",
   "auth.login",
@@ -185,8 +159,9 @@ export const PUBLIC_ENDPOINTS = new Set([
   "system.openLogs",
   "storage.location",
   "storage.useExisting",
-  "storage.openRoot",
+  "storage.openRoot"
 ]);
+
 export const UNLICENSED_ENDPOINTS = new Set([
   "auth.logout",
   "auth.changePassword",
@@ -202,7 +177,7 @@ export const UNLICENSED_ENDPOINTS = new Set([
   "billing.orders",
   "cloud.notifications",
   "cloud.notificationsSeen",
-  "system.openExternal",
+  "system.openExternal"
 ]);
 
 export const contract = {
@@ -224,33 +199,17 @@ export const contract = {
       referralCode: z.string().trim().max(20).optional(),
       remember: z.boolean().default(true),
       /** Chuyển dữ liệu của bản trước khi có đăng nhập vào tài khoản này (người dùng chọn) */
-      adoptLegacy: z.boolean().default(false),
-    }),
+      adoptLegacy: z.boolean().default(false)
+    })
   ),
   /** Đăng ký bước 2: nhập đúng mã → tạo tài khoản và đăng nhập luôn */
-  "auth.registerVerify": def()(
-    z.object({
-      email,
-      code: z
-        .string()
-        .trim()
-        .regex(/^\d{6}$/, "Mã xác thực gồm 6 chữ số"),
-    }),
-  ),
+  "auth.registerVerify": def()(z.object({ email, code: z.string().trim().regex(/^\d{6}$/, "Mã xác thực gồm 6 chữ số") })),
   "auth.registerResend": def()(z.object({ email })),
   /** Quên mật khẩu bước 1: gửi mã 6 số tới email (trả lời như nhau dù email có tài khoản hay không) */
   "auth.forgotPassword": def()(z.object({ email })),
   /** Quên mật khẩu bước 2: đúng mã → đặt mật khẩu mới và đăng nhập luôn */
   "auth.resetPassword": def()(
-    z.object({
-      email,
-      code: z
-        .string()
-        .trim()
-        .regex(/^\d{6}$/, "Mã xác thực gồm 6 chữ số"),
-      newPassword: password,
-      remember: z.boolean().default(true),
-    }),
+    z.object({ email, code: z.string().trim().regex(/^\d{6}$/, "Mã xác thực gồm 6 chữ số"), newPassword: password, remember: z.boolean().default(true) })
   ),
   "auth.login": def()(z.object({ email, password: z.string().min(1).max(200), remember: z.boolean().default(true) })),
   "auth.logout": def()(none),
@@ -271,9 +230,7 @@ export const contract = {
   /** Chọn kênh dùng (≤ hạn mức) – kênh còn lại chuyển "Ngoài hạn mức" */
   "channels.setQuota": def()(z.object({ activeIds: z.array(z.string().min(1).max(64)).max(1e5) })),
   "billing.plans": def()(none),
-  "billing.createOrder": def()(
-    z.object({ planCode: z.string().min(1).max(40), gateway: z.enum(["VIETQR", "PAYOS"]).optional() }),
-  ),
+  "billing.createOrder": def()(z.object({ planCode: z.string().min(1).max(40), gateway: z.enum(["VIETQR", "PAYOS"]).optional() })),
   /** Hỏi trạng thái đơn (app hỏi định kỳ khi khách đang thanh toán; PAID → tự làm mới license) */
   "billing.order": def()(z.object({ code: z.string().min(1).max(30) })),
   "billing.orders": def()(none),
@@ -299,7 +256,9 @@ export const contract = {
   "accounts.get": def()(byId),
   /** TikTok/Instagram: tự tạo kênh tương ứng. Facebook (VIA): thêm Fanpage bằng `channels.createPage`. */
   "accounts.create": def()(AccountInput),
-  "accounts.update": def()(z.object({ id, patch: AccountInput.omit({ platform: true }).partial() })),
+  "accounts.update": def()(
+    z.object({ id, patch: AccountInput.omit({ platform: true }).partial() })
+  ),
   "accounts.delete": def()(byId),
   "channels.createPage": def()(PageInput),
   "channels.delete": def()(byId),
@@ -313,8 +272,8 @@ export const contract = {
       token: z.string().trim().min(20).max(4e3),
       refreshToken: z.string().trim().max(4e3).nullish(),
       clientKey: z.string().trim().max(200).nullish(),
-      clientSecret: z.string().trim().max(200).nullish(),
-    }),
+      clientSecret: z.string().trim().max(200).nullish()
+    })
   ),
   "channels.verify": def()(byId),
   /** Ứng dụng Meta (App ID + App Secret) dùng cho "Kết nối Facebook" – khai báo một lần */
@@ -323,50 +282,28 @@ export const contract = {
   /** Kết nối Facebook thì lấy luôn tài khoản Instagram liên kết với Fanpage (mặc định bật) */
   "integrations.setInstagram": def()(z.object({ enabled: z.boolean() })),
   "integrations.setMeta": def()(
-    z.object({
-      appId: z
-        .string()
-        .trim()
-        .regex(/^\d{5,20}$/, "App ID là dãy số"),
-      appSecret: z
-        .string()
-        .trim()
-        .regex(/^[0-9a-f]{32}$/i, "App Secret gồm 32 ký tự 0-9, a-f")
-        .nullish(),
-      configId: z
-        .string()
-        .trim()
-        .regex(/^\d{5,25}$/, "Configuration ID là dãy số")
-        .nullish()
-        .or(z.literal("")),
-      redirectUri: z.string().trim().url("Redirect URI không hợp lệ").max(500).nullish().or(z.literal("")),
-      instagram: z.boolean().optional(),
-    }),
+    z.object({ appId: z.string().trim().regex(/^\d{5,20}$/, "App ID là dãy số"), appSecret: z.string().trim().regex(/^[0-9a-f]{32}$/i, "App Secret gồm 32 ký tự 0-9, a-f").nullish(), configId: z.string().trim().regex(/^\d{5,25}$/, "Configuration ID là dãy số").nullish().or(z.literal("")), redirectUri: z.string().trim().url("Redirect URI không hợp lệ").max(500).nullish().or(z.literal("")), instagram: z.boolean().optional() })
   ),
   /** Ứng dụng YouTube (OAuth Client loại Desktop app trong Google Cloud) – khai báo một lần */
   "integrations.youtube": def()(none),
   "integrations.setYoutube": def()(
     z.object({
-      clientId: z
-        .string()
-        .trim()
-        .regex(/^[\w-]+\.apps\.googleusercontent\.com$/, "Client ID có dạng …apps.googleusercontent.com"),
-      clientSecret: z.string().trim().min(10).max(200).nullish(),
-    }),
+      clientId: z.string().trim().regex(/^[\w-]+\.apps\.googleusercontent\.com$/, "Client ID có dạng …apps.googleusercontent.com"),
+      clientSecret: z.string().trim().min(10).max(200).nullish()
+    })
   ),
   "integrations.setYoutubePublish": def()(
     z.object({
       privacy: z.enum(["public", "unlisted", "private"]).optional(),
-      categoryId: z
-        .string()
-        .regex(/^\d{1,3}$/)
-        .optional(),
+      categoryId: z.string().regex(/^\d{1,3}$/).optional(),
       declareSynthetic: z.boolean().optional(),
-      notifySubscribers: z.boolean().optional(),
-    }),
+      notifySubscribers: z.boolean().optional()
+    })
   ),
   /** "Kết nối YouTube": đăng nhập Google qua trình duyệt → tạo/cập nhật kênh YouTube */
-  "accounts.connectYoutube": def()(z.object({ accountId: id.optional(), workspaceId: id.nullish() }).default({})),
+  "accounts.connectYoutube": def()(
+    z.object({ accountId: id.optional(), workspaceId: id.nullish() }).default({})
+  ),
   /** Hủy phiên đăng nhập YouTube đang chờ trình duyệt */
   "accounts.cancelYoutubeLogin": def()(none),
   /** Ứng dụng TikTok (Client Key + Secret) cho "Kết nối TikTok" – khai báo một lần */
@@ -376,18 +313,17 @@ export const contract = {
       clientKey: z.string().trim().min(8, "Client Key không hợp lệ").max(100),
       clientSecret: z.string().trim().max(200).nullish(),
       redirectUri: z.string().trim().url("Redirect URI không hợp lệ").max(500).nullish().or(z.literal("")),
-      scopes: z
-        .string()
-        .trim()
-        .max(300)
-        .regex(/^[a-z._,\s]*$/, "Scope gồm chữ thường, dấu chấm, phẩy")
-        .nullish(),
-    }),
+      scopes: z.string().trim().max(300).regex(/^[a-z._,\s]*$/, "Scope gồm chữ thường, dấu chấm, phẩy").nullish()
+    })
   ),
   /** Đăng nhập TikTok (OAuth + PKCE) → tạo/cập nhật tài khoản + kênh TikTok */
-  "accounts.connectTiktok": def()(z.object({ accountId: id.optional(), workspaceId: id.nullish() }).default({})),
+  "accounts.connectTiktok": def()(
+    z.object({ accountId: id.optional(), workspaceId: id.nullish() }).default({})
+  ),
   /** Đăng nhập Facebook (OAuth) → tạo/cập nhật tài khoản VIA + mọi Fanpage/Instagram được cấp quyền */
-  "accounts.connectFacebook": def()(z.object({ accountId: id.optional(), workspaceId: id.nullish() }).default({})),
+  "accounts.connectFacebook": def()(
+    z.object({ accountId: id.optional(), workspaceId: id.nullish() }).default({})
+  ),
   "channels.disconnect": def()(byId),
   /** Nhập mọi Fanpage (+ Instagram Business liên kết) từ User token của VIA; App ID/Secret → đổi token dài hạn */
   "accounts.importFacebook": def()(
@@ -395,22 +331,18 @@ export const contract = {
       accountId: id,
       userToken: z.string().trim().min(20).max(4e3),
       appId: z.string().trim().max(40).nullish(),
-      appSecret: z.string().trim().max(100).nullish(),
-    }),
+      appSecret: z.string().trim().max(100).nullish()
+    })
   ),
-  "channels.list": def()(z.object({ workspaceId: id.nullish(), platform: platform.optional() }).default({})),
+  "channels.list": def()(
+    z.object({ workspaceId: id.nullish(), platform: platform.optional() }).default({})
+  ),
   "proxies.list": def()(optionalWorkspace),
   "proxies.create": def()(ProxyInput),
   "proxies.delete": def()(byId),
   // Kho nội dung
   "content.list": def()(
-    z
-      .object({
-        workspaceId: id.nullish(),
-        status: z.array(contentStatus).optional(),
-        search: z.string().max(200).optional(),
-      })
-      .default({}),
+    z.object({ workspaceId: id.nullish(), status: z.array(contentStatus).optional(), search: z.string().max(200).optional() }).default({})
   ),
   "content.create": def()(ContentInput),
   "content.delete": def()(byId),
@@ -420,7 +352,7 @@ export const contract = {
   "content.stats": def()(optionalWorkspace),
   /** AI Spin: sinh `count` biến thể caption cho mỗi nội dung (chạy tuần tự) */
   "content.spin": def()(
-    z.object({ ids: z.array(id).min(1).max(50), count: z.number().int().min(1).max(10).default(3) }),
+    z.object({ ids: z.array(id).min(1).max(50), count: z.number().int().min(1).max(10).default(3) })
   ),
   "content.variants": def()(byId),
   /** Dùng biến thể làm caption + hashtag chính của nội dung */
@@ -428,11 +360,7 @@ export const contract = {
   "content.deleteVariant": def()(byId),
   /** Chấm điểm Hook (40% kỹ thuật + 60% AI giám khảo). platform bỏ trống = đoán theo kênh đã lên lịch / định dạng; force = chấm lại dù bài chưa đổi */
   "content.hookScore": def()(
-    z.object({
-      id,
-      platform: z.enum(["facebook", "tiktok", "instagram", "youtube"]).optional(),
-      force: z.boolean().default(false),
-    }),
+    z.object({ id, platform: z.enum(["facebook", "tiktok", "instagram", "youtube"]).optional(), force: z.boolean().default(false) })
   ),
   "content.hashtags": def()(z.object({ ids: z.array(id).min(1).max(50) })),
   // Xưởng Video AI
@@ -457,24 +385,16 @@ export const contract = {
       id,
       bible: z.object({
         style: z.string().trim().max(800),
-        characters: z
-          .array(z.object({ name: z.string().trim().min(1).max(60), look: z.string().trim().min(1).max(800) }))
-          .max(8),
-        product: z
-          .object({ name: z.string().trim().min(1).max(80), look: z.string().trim().min(1).max(800) })
-          .nullable(),
-      }),
-    }),
+        characters: z.array(z.object({ name: z.string().trim().min(1).max(60), look: z.string().trim().min(1).max(800) })).max(8),
+        product: z.object({ name: z.string().trim().min(1).max(80), look: z.string().trim().min(1).max(800) }).nullable()
+      })
+    })
   ),
   /** Video dài: viết (lại) phân cảnh của một hồi theo dàn ý */
   "studio.writeAct": def()(z.object({ projectId: id, act: z.number().int().min(0).max(9) })),
   // Phân tích & mục tiêu kênh
   "analytics.overview": def()(
-    z.object({
-      workspaceId: id.nullish(),
-      channelId: id.nullish(),
-      days: z.union([z.literal(30), z.literal(60), z.literal(90)]).default(30),
-    }),
+    z.object({ workspaceId: id.nullish(), channelId: id.nullish(), days: z.union([z.literal(30), z.literal(60), z.literal(90)]).default(30) })
   ),
   "analytics.goals": def()(z.object({ workspaceId: id.nullish(), channelId: id.nullish() }).default({})),
   "analytics.saveGoal": def()(
@@ -483,8 +403,8 @@ export const contract = {
       channelId: id,
       metric: z.enum(["followers", "watch_minutes_60d", "views_30d", "videos_30d", "engagements_30d"]),
       target: z.number().int().min(1).max(1e9),
-      label: z.string().trim().max(120).nullish(),
-    }),
+      label: z.string().trim().max(120).nullish()
+    })
   ),
   "analytics.deleteGoal": def()(byId),
   // Kế hoạch nội dung (ngày dạng YYYY-MM-DD)
@@ -497,8 +417,8 @@ export const contract = {
       days: z.number().int().min(1).max(30),
       perDay: z.number().int().min(1).max(3),
       formats: z.array(z.string().max(80)).max(20).default([]),
-      useTrends: z.boolean().default(false),
-    }),
+      useTrends: z.boolean().default(false)
+    })
   ),
   "plan.save": def()(
     z.object({
@@ -509,8 +429,8 @@ export const contract = {
       format: z.string().max(80).default("free"),
       hook: z.string().trim().max(300).nullish(),
       description: z.string().trim().max(1e3).nullish(),
-      status: z.enum(["idea", "in_progress", "done", "dropped"]).optional(),
-    }),
+      status: z.enum(["idea", "in_progress", "done", "dropped"]).optional()
+    })
   ),
   "plan.delete": def()(byId),
   "plan.toVideo": def()(byId),
@@ -542,8 +462,8 @@ export const contract = {
       /** "Sửa prompt tiếng Anh (nâng cao)": true → dùng nguyên imagePrompt; false → AI viết lại từ mô tả tiếng Việt */
       promptManual: z.boolean().optional(),
       /** Chỉ dùng khi promptManual = true */
-      imagePrompt: z.string().trim().max(1500).nullish(),
-    }),
+      imagePrompt: z.string().trim().max(1500).nullish()
+    })
   ),
   /** Prompt ảnh nhân vật chuẩn (tiếng Anh) – AI viết từ mô tả tiếng Việt; còn khớp mô tả thì dùng lại */
   "series.characterPrompt": def()(z.object({ id, force: z.boolean().default(false) })),
@@ -558,8 +478,8 @@ export const contract = {
       seriesId: id,
       title: z.string().trim().min(1).max(120),
       synopsis: z.string().trim().max(1500),
-      cliffhanger: z.string().trim().max(400).nullish(),
-    }),
+      cliffhanger: z.string().trim().max(400).nullish()
+    })
   ),
   "series.deleteEpisode": def()(byId),
   /** AI viết kịch bản tập → dự án Xưởng video (thoại theo nhân vật, giọng riêng) */
@@ -582,24 +502,18 @@ export const contract = {
   /** Giãn cách bài trùng giờ giữa các kênh (áp dụng khi xếp / dời lịch) */
   "posts.stagger": def()(none),
   "posts.setStagger": def()(
-    z.object({
-      enabled: z.boolean().optional(),
-      minMinutes: z.number().int().min(1).max(60).optional(),
-      maxMinutes: z.number().int().min(1).max(120).optional(),
-    }),
+    z.object({ enabled: z.boolean().optional(), minMinutes: z.number().int().min(1).max(60).optional(), maxMinutes: z.number().int().min(1).max(120).optional() })
   ),
   /**
    * Tự xếp lịch: mỗi nội dung → kênh phù hợp định dạng (ít bài nhất 7 ngày tới) trong Pocket của nó,
    * vào khung giờ vàng sớm nhất còn trống, cách bài khác cùng kênh ≥ spacingHours.
    */
   "posts.autoSchedule": def()(
-    z.object({ contentIds: z.array(id).min(1).max(200), spacingHours: z.number().min(1).max(24).default(4) }),
+    z.object({ contentIds: z.array(id).min(1).max(200), spacingHours: z.number().min(1).max(24).default(4) })
   ),
   // Hộp thư hợp nhất
   "inbox.conversations": def()(
-    z
-      .object({ workspaceId: id.nullish(), platform: platform.optional(), unreadOnly: z.boolean().optional() })
-      .default({}),
+    z.object({ workspaceId: id.nullish(), platform: platform.optional(), unreadOnly: z.boolean().optional() }).default({})
   ),
   "inbox.messages": def()(z.object({ conversationId: id })),
   "inbox.markRead": def()(z.object({ conversationId: id })),
@@ -607,14 +521,12 @@ export const contract = {
   "inbox.stats": def()(optionalWorkspace),
   /** Xếp tin trả lời vào outbox ("Chờ gửi"); worker gửi thật qua Graph API ngay sau đó. */
   "inbox.send": def()(
-    z
-      .object({
-        conversationId: id,
-        body: z.string().trim().max(4e3),
-        /** Tệp đính kèm đã chép vào media/inbox (inbox.pickAttachments) */
-        attachments: z.array(z.string().max(300)).max(5).default([]),
-      })
-      .refine((v) => v.body.length > 0 || v.attachments.length > 0, "Nhập nội dung hoặc đính kèm tệp"),
+    z.object({
+      conversationId: id,
+      body: z.string().trim().max(4e3),
+      /** Tệp đính kèm đã chép vào media/inbox (inbox.pickAttachments) */
+      attachments: z.array(z.string().max(300)).max(5).default([])
+    }).refine((v) => v.body.length > 0 || v.attachments.length > 0, "Nhập nội dung hoặc đính kèm tệp")
   ),
   /** Chọn ảnh / tệp để gửi kèm tin nhắn → chép vào media/inbox, trả đường dẫn */
   "inbox.pickAttachments": def()(z.object({ images: z.boolean().default(false), multiple: z.boolean().default(true) })),
@@ -622,8 +534,8 @@ export const contract = {
     z.object({
       conversationId: id,
       tags: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
-      status: z.enum(["open", "pending", "resolved"]).optional(),
-    }),
+      status: z.enum(["open", "pending", "resolved"]).optional()
+    })
   ),
   "inbox.rules": def()(optionalWorkspace),
   "inbox.toggleRule": def()(z.object({ id, enabled: z.boolean() })),
@@ -639,8 +551,8 @@ export const contract = {
       template: z.string().trim().max(1e3).nullish(),
       minDelaySec: z.number().int().min(0).max(600),
       maxDelaySec: z.number().int().min(0).max(600),
-      enabled: z.boolean().optional(),
-    }),
+      enabled: z.boolean().optional()
+    })
   ),
   "inbox.deleteRule": def()(byId),
   /** Đồng bộ ngay (một kênh hoặc tất cả kênh FB/IG đã kết nối) */
@@ -661,8 +573,8 @@ export const contract = {
       maxDelaySec: z.number().int().min(0).max(900).optional(),
       maxPerHour: z.number().int().min(1).max(500).optional(),
       autoLike: z.boolean().optional(),
-      tagLeads: z.boolean().optional(),
-    }),
+      tagLeads: z.boolean().optional()
+    })
   ),
   /** Duyệt câu trả lời AI (có thể sửa) → gửi ngay */
   "inbox.approveDraft": def()(z.object({ id, body: z.string().trim().max(4e3).nullish() })),
@@ -672,7 +584,7 @@ export const contract = {
   // Tổng quan / cảnh báo / nhật ký
   "dashboard.summary": def()(optionalWorkspace),
   "dashboard.topChannels": def()(
-    z.object({ workspaceId: id.nullish(), limit: z.number().int().min(1).max(20).default(3) }).default({}),
+    z.object({ workspaceId: id.nullish(), limit: z.number().int().min(1).max(20).default(3) }).default({})
   ),
   "dashboard.daemon": def()(optionalWorkspace),
   "alerts.open": def()(none),
@@ -687,9 +599,9 @@ export const contract = {
         defaultModel: z.string().max(120).optional(),
         enabled: z.boolean().optional(),
         /** Endpoint tùy chỉnh (gateway/proxy nội bộ); null = mặc định của nhà cung cấp */
-        baseUrl: z.string().url().max(300).nullable().optional(),
-      }),
-    }),
+        baseUrl: z.string().url().max(300).nullable().optional()
+      })
+    })
   ),
   /** Lưu API key vào két (AES-256-GCM). Key không bao giờ quay lại renderer. */
   /** Lưu key rồi tự kiểm tra kết nối + tải danh sách model (cả nhà cung cấp dùng chung key) */
@@ -708,10 +620,7 @@ export const contract = {
   "ai.setFallback": def()(z.object({ enabled: z.boolean() })),
   "ai.pricing": def()(none),
   "ai.setPrice": def()(
-    z.object({
-      model: z.string().trim().min(1).max(120),
-      price: z.object({ input: z.number().min(0).max(1e3), output: z.number().min(0).max(1e3) }).nullable(),
-    }),
+    z.object({ model: z.string().trim().min(1).max(120), price: z.object({ input: z.number().min(0).max(1e3), output: z.number().min(0).max(1e3) }).nullable() })
   ),
   "vault.info": def()(none),
   "settings.budget": def()(none),
@@ -741,57 +650,47 @@ export const contract = {
       aspect: z.enum(["9:16", "16:9", "1:1"]).default("16:9"),
       targetSec: z.number().int().min(15).max(900).default(120),
       videoEngine: z.enum(["seedance", "veo"]).optional(),
-      workspaceId: id.nullish(),
-    }),
+      workspaceId: id.nullish()
+    })
   ),
   "film.get": def()(byId),
   "film.update": def()(
     z.object({
       id,
-      patch: z
-        .object({
-          title: z.string().trim().min(1).max(160),
-          idea: z.string().max(4e3),
-          logline: z.string().max(600).nullable(),
-          voiceMode: z.enum(["clip", "convert", "dub"]),
-          style: z.string().max(600),
-          genre: z.string().trim().max(120).nullable(),
-          visualStyle: z.string().trim().max(300).nullable(),
-          dialogueLanguage: z.string().trim().min(1).max(60),
-          subtitleVi: z.boolean(),
-          notes: z.string().max(2e3).nullable(),
-          aspect: z.enum(["9:16", "16:9", "1:1"]),
-          targetSec: z.number().int().min(15).max(900),
-          videoEngine: z.enum(["seedance", "veo"]),
-          imageEngine: z.enum(["google", "fal"]),
-          takesPerRun: z.number().int().min(1).max(4),
-          videoResolution: z.enum(["480p", "720p", "1080p"]),
-          videoAudio: z.boolean(),
-          videoTier: z.enum(["fast", "standard"]),
-          workspaceId: id.nullable(),
-        })
-        .partial(),
-    }),
+      patch: z.object({
+        title: z.string().trim().min(1).max(160),
+        idea: z.string().max(4e3),
+        logline: z.string().max(600).nullable(),
+        voiceMode: z.enum(["clip", "convert", "dub"]),
+        style: z.string().max(600),
+        genre: z.string().trim().max(120).nullable(),
+        visualStyle: z.string().trim().max(300).nullable(),
+        dialogueLanguage: z.string().trim().min(1).max(60),
+        subtitleVi: z.boolean(),
+        notes: z.string().max(2e3).nullable(),
+        aspect: z.enum(["9:16", "16:9", "1:1"]),
+        targetSec: z.number().int().min(15).max(900),
+        videoEngine: z.enum(["seedance", "veo"]),
+        imageEngine: z.enum(["google", "fal"]),
+        takesPerRun: z.number().int().min(1).max(4),
+        videoResolution: z.enum(["480p", "720p", "1080p"]),
+        videoAudio: z.boolean(),
+        videoTier: z.enum(["fast", "standard"]),
+        workspaceId: id.nullable()
+      }).partial()
+    })
   ),
   "film.delete": def()(byId),
   /** AI viết kịch bản → thay toàn bộ nhân vật, bối cảnh, cảnh quay */
   "film.generateScript": def()(byId),
   /** Duyệt nhân vật AI đề xuất: episode = chỉ tập này, series = thêm vào dàn nhân vật series, drop = bỏ */
   "film.resolveProposals": def()(
-    z.object({
-      filmId: id,
-      decisions: z
-        .array(z.object({ assetId: id, action: z.enum(["episode", "series", "drop"]) }))
-        .min(1)
-        .max(20),
-    }),
+    z.object({ filmId: id, decisions: z.array(z.object({ assetId: id, action: z.enum(["episode", "series", "drop"]) })).min(1).max(20) })
   ),
   /** Bối cảnh đã có ảnh ở các tập khác của cùng series (để dùng lại cho tập này) */
   "film.seriesLocations": def()(z.object({ filmId: id })),
   /** Dùng bối cảnh của tập khác: chép ảnh đã chọn (+ mô tả nếu copyText) vào bối cảnh `assetId` của phim này */
-  "film.adoptLocation": def()(
-    z.object({ filmId: id, assetId: id, sourceAssetId: id, copyText: z.boolean().default(true) }),
-  ),
+  "film.adoptLocation": def()(z.object({ filmId: id, assetId: id, sourceAssetId: id, copyText: z.boolean().default(true) })),
   /** Bảng nhân vật đã chọn → ảnh chuẩn của nhân vật series (các tập sau dùng) */
   "film.promoteToSeries": def()(z.object({ assetId: id })),
   /** Thêm (không có id) / sửa một mục */
@@ -800,27 +699,25 @@ export const contract = {
       filmId: id,
       id: id.optional(),
       kind: z.enum(["character", "location", "shot"]),
-      patch: z
-        .object({
-          name: z.string().trim().min(1).max(80),
-          summary: z.string().max(600),
-          description: z.string().max(1500),
-          characterIds: z.array(id).max(6),
-          locationId: id.nullable(),
-          camera: z.string().max(300),
-          durationSec: z.number().int().min(3).max(15),
-          dialogue: z.string().max(800).nullable(),
-          /** Cảnh quay: phụ đề tiếng Việt */
-          subtitle: z.string().max(800).nullable(),
-          /** Nhân vật: hồ sơ giọng (tiếng Anh) + giọng cố định */
-          voiceProfile: z.string().max(300).nullable(),
-          voiceProvider: z.string().max(40).nullable(),
-          voiceId: z.string().max(120).nullable(),
-          /** Bật = dùng nguyên prompt tiếng Anh người dùng sửa; tắt = AI dịch lại từ tóm tắt tiếng Việt khi tạo */
-          promptManual: z.boolean(),
-        })
-        .partial(),
-    }),
+      patch: z.object({
+        name: z.string().trim().min(1).max(80),
+        summary: z.string().max(600),
+        description: z.string().max(1500),
+        characterIds: z.array(id).max(6),
+        locationId: id.nullable(),
+        camera: z.string().max(300),
+        durationSec: z.number().int().min(3).max(15),
+        dialogue: z.string().max(800).nullable(),
+        /** Cảnh quay: phụ đề tiếng Việt */
+        subtitle: z.string().max(800).nullable(),
+        /** Nhân vật: hồ sơ giọng (tiếng Anh) + giọng cố định */
+        voiceProfile: z.string().max(300).nullable(),
+        voiceProvider: z.string().max(40).nullable(),
+        voiceId: z.string().max(120).nullable(),
+        /** Bật = dùng nguyên prompt tiếng Anh người dùng sửa; tắt = AI dịch lại từ tóm tắt tiếng Việt khi tạo */
+        promptManual: z.boolean()
+      }).partial()
+    })
   ),
   /** Cập nhật ngay prompt tiếng Anh của một mục theo tóm tắt tiếng Việt hiện tại (để xem trước) */
   "film.refreshPrompt": def()(z.object({ filmId: id, id })),
@@ -828,21 +725,11 @@ export const contract = {
   "film.reorder": def()(z.object({ filmId: id, ids: z.array(id).max(200) })),
   /** Ước tính chi phí trước khi xếp hàng (takes: số bản mỗi mục, mặc định theo phim) */
   "film.estimate": def()(
-    z.object({
-      filmId: id,
-      assetIds: z.array(id).min(1).max(200),
-      takes: z.number().int().min(1).max(4).optional(),
-      kind: z.enum(["image", "video"]).default("image"),
-    }),
+    z.object({ filmId: id, assetIds: z.array(id).min(1).max(200), takes: z.number().int().min(1).max(4).optional(), kind: z.enum(["image", "video"]).default("image") })
   ),
   /** Xếp hàng tạo ảnh (mặc định) hoặc video (cảnh quay, khung đầu = khung hình đã chọn) */
   "film.generate": def()(
-    z.object({
-      filmId: id,
-      assetIds: z.array(id).min(1).max(200),
-      takes: z.number().int().min(1).max(4).optional(),
-      kind: z.enum(["image", "video"]).default("image"),
-    }),
+    z.object({ filmId: id, assetIds: z.array(id).min(1).max(200), takes: z.number().int().min(1).max(4).optional(), kind: z.enum(["image", "video"]).default("image") })
   ),
   /** Chọn bản (ảnh hoặc video – theo loại của bản). takeId null + video → bỏ chọn video */
   /** Nâng cấp độ phân giải video đã tạo (1080p / 4K) bằng Google Flow hoặc FFmpeg trên máy → bản tạo mới */
@@ -860,9 +747,9 @@ export const contract = {
         clipVolume: z.number().min(0).max(2),
         bgmTrack: z.string().max(200).nullable(),
         bgmVolume: z.number().min(0).max(1),
-        subtitleStyle: z.string().max(60),
-      }),
-    }),
+        subtitleStyle: z.string().max(60)
+      })
+    })
   ),
   "film.assembleStatus": def()(z.object({ filmId: id })),
   "film.assembleCancel": def()(z.object({ filmId: id })),
@@ -874,25 +761,13 @@ export const contract = {
   "film.optimizeStyle": def()(byId),
   "film.queue": def()(z.object({ filmId: id.nullish() }).default({})),
   "film.setQueue": def()(
-    z.object({
-      paused: z.boolean().optional(),
-      imageConcurrency: z.number().int().min(1).max(8).optional(),
-      videoConcurrency: z.number().int().min(1).max(4).optional(),
-    }),
+    z.object({ paused: z.boolean().optional(), imageConcurrency: z.number().int().min(1).max(8).optional(), videoConcurrency: z.number().int().min(1).max(4).optional() })
   ),
   /** Google Flow: tạo video Veo bằng tài khoản Google của khách (Chrome trên máy) thay cho Veo API */
   "flow.status": def()(none),
   "flow.setSource": def()(z.object({ source: z.enum(["api", "flow"]) })),
-  "flow.setPrefs": def()(
-    z.object({
-      hidden: z.boolean().optional(),
-      concurrency: z.number().int().min(1).max(4).optional(),
-      images: z.boolean().optional(),
-    }),
-  ),
-  "flow.setModel": def()(
-    z.object({ model: z.enum(["Veo 3.1 - Fast", "Veo 3.1 - Lite", "Veo 3.1 - Quality", "Omni 1.1 Flash"]) }),
-  ),
+  "flow.setPrefs": def()(z.object({ hidden: z.boolean().optional(), concurrency: z.number().int().min(1).max(4).optional(), images: z.boolean().optional() })),
+  "flow.setModel": def()(z.object({ model: z.enum(["Veo 3.1 - Fast", "Veo 3.1 - Lite", "Veo 3.1 - Quality", "Omni 1.1 Flash"]) })),
   /** Mở Chrome (profile riêng) ở trang Flow để người dùng tự đăng nhập Google */
   "flow.openLogin": def()(none),
   "flow.check": def()(none),
@@ -903,11 +778,7 @@ export const contract = {
   "flow.reset": def()(none),
   /** dryRun: kiểm tra giao diện (mọi bước trừ bấm tạo – không tốn credit, kèm tải khung hình mẫu) → diagnostics = thư mục ảnh chụp */
   "flow.test": def()(
-    z.object({
-      prompt: z.string().trim().min(3).max(1e3),
-      aspect: z.enum(["9:16", "16:9", "1:1"]).default("16:9"),
-      dryRun: z.boolean().default(false),
-    }),
+    z.object({ prompt: z.string().trim().min(3).max(1e3), aspect: z.enum(["9:16", "16:9", "1:1"]).default("16:9"), dryRun: z.boolean().default(false) })
   ),
   "flow.cancelTest": def()(none),
   "flow.openDiagnostics": def()(none),
@@ -922,9 +793,7 @@ export const contract = {
   "localtts.renameClone": def()(z.object({ id, name: z.string().trim().min(1).max(60) })),
   "localtts.removeClone": def()(byId),
   /** Nghe thử giọng: đọc câu mẫu (lưu file vào media/voice-samples – lần sau phát lại, không gọi API); trả đường dẫn media tương đối */
-  "media.previewVoice": def()(
-    z.object({ provider: z.string().max(40), voiceId: z.string().max(120).nullish(), workspaceId: id.nullish() }),
-  ),
+  "media.previewVoice": def()(z.object({ provider: z.string().max(40), voiceId: z.string().max(120).nullish(), workspaceId: id.nullish() })),
   "media.bgmList": def()(none),
   /** Chọn file nhạc → chép vào media/bgm; trả tên file (null = hủy) */
   "media.importBgm": def()(none),
@@ -937,8 +806,8 @@ export const contract = {
       prompt: z.string().trim().min(3).max(500),
       durationSec: z.number().min(10).max(180).default(30),
       instrumental: z.boolean().default(true),
-      workspaceId: id.nullish(),
-    }),
+      workspaceId: id.nullish()
+    })
   ),
   /** Nguồn ảnh AI ưu tiên cho chế độ Bán tự động */
   "media.imageEngine": def()(none),
@@ -947,20 +816,14 @@ export const contract = {
   /** Ước tính chi phí render (Veo, ảnh AI, giọng đọc trả phí) – cảnh đã có trong cache không tính */
   "render.estimate": def()(z.object({ projectId: id })),
   /** Chọn clip/ảnh của người dùng → chép vào thư mục media/uploads, trả đường dẫn để gắn vào cảnh */
-  "media.importClips": def()(
-    z.object({ multiple: z.boolean().default(false), images: z.boolean().default(false) }).default({}),
-  ),
+  "media.importClips": def()(z.object({ multiple: z.boolean().default(false), images: z.boolean().default(false) }).default({})),
   "render.cancel": def()(byId),
-  "render.jobs": def()(
-    z.object({ projectId: id.nullish(), limit: z.number().int().min(1).max(100).default(20) }).default({}),
-  ),
+  "render.jobs": def()(z.object({ projectId: id.nullish(), limit: z.number().int().min(1).max(100).default(20) }).default({})),
   /** Mở thư mục chứa file (chỉ trong thư mục media) */
   "media.showInFolder": def()(z.object({ path: z.string().min(1).max(500) })),
   /** Nâng cấp độ phân giải video (đường dẫn trong thư mục media) – xem shared/upscale.ts */
   "media.upscaleInfo": def()(z.object({ path: z.string().min(1).max(500) })),
-  "media.upscale": def()(
-    z.object({ path: z.string().min(1).max(500), quality: z.enum(["1080p", "4k"]), method: z.enum(["flow", "local"]) }),
-  ),
+  "media.upscale": def()(z.object({ path: z.string().min(1).max(500), quality: z.enum(["1080p", "4k"]), method: z.enum(["flow", "local"]) })),
   "media.upscaleProgress": def()(z.object({ path: z.string().min(1).max(500) })),
   "media.cancelUpscale": def()(z.object({ path: z.string().min(1).max(500) })),
   // Hệ thống
@@ -975,7 +838,5 @@ export const contract = {
   "system.openLogs": def()(none),
   /** Chạy nền dưới khay hệ thống / khởi động cùng Windows (theo máy) */
   "system.background": def()(none),
-  "system.setBackground": def()(
-    z.object({ closeToTray: z.boolean().optional(), launchAtLogin: z.boolean().optional() }),
-  ),
+  "system.setBackground": def()(z.object({ closeToTray: z.boolean().optional(), launchAtLogin: z.boolean().optional() }))
 };

@@ -1,7 +1,10 @@
 import { omni } from "../lib/api";
 import { create } from "zustand";
 
-export const useSystemStore = create(() => ({ stats: null, window: { isMaximized: false, isFocused: true } }));
+export const useSystemStore = create(() => ({
+  stats: null,
+  window: { isMaximized: false, isFocused: true }
+}));
 
 export function bindSystemListeners() {
   const offStats = omni.system.onStats((stats) => useSystemStore.setState({ stats }));

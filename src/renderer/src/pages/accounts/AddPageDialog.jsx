@@ -22,59 +22,40 @@ export function AddPageDialog({ account, onClose }) {
     if (!account || !name.trim()) return;
     create.mutate({ accountId: account.id, name, externalId: externalId || null, role }, { onSuccess: onClose });
   };
-  return (
-    <Dialog
-      open={account != null}
-      onClose={onClose}
-      title="Thêm Fanpage"
-      description={account ? `Dưới VIA: ${account.displayName}` : void 0}
-      width={440}
-      footer={
-        <>
-          <Button variant="subtle" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button variant="primary" disabled={!name.trim() || create.isPending} onClick={submit}>
-            Thêm Fanpage
-          </Button>
-        </>
-      }
+  return <Dialog
+    open={account != null}
+    onClose={onClose}
+    title="Thêm Fanpage"
+    description={account ? `Dưới VIA: ${account.displayName}` : void 0}
+    width={440}
+    footer={<>
+      <Button variant="subtle" onClick={onClose}>Hủy</Button>
+      <Button variant="primary" disabled={!name.trim() || create.isPending} onClick={submit}>Thêm Fanpage</Button>
+    </>}
+  >
+    <form
+      className="flex flex-col gap-space-md"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
     >
-      <form
-        className="flex flex-col gap-space-md"
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit();
-        }}
-      >
-        <Field label="Tên Fanpage" required={true}>
-          {(id) => (
-            <Input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="Thời Trang Nữ Công Sở" />
-          )}
-        </Field>
-        <Field label="Page ID">
-          {(id) => (
-            <Input
-              id={id}
-              value={externalId}
-              onChange={(e) => setExternalId(e.target.value)}
-              placeholder="fb_page_99182"
-            />
-          )}
-        </Field>
-        <Field label="Quyền của VIA trên Page">
-          {(id) => (
-            <Select id={id} value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="admin">Quản trị viên</option>
-              <option value="editor">Biên tập viên</option>
-              <option value="moderator">Kiểm duyệt viên</option>
-              <option value="advertiser">Nhà quảng cáo</option>
-            </Select>
-          )}
-        </Field>
-        {create.error && <p className="text-body-sm text-error">{create.error.message}</p>}
-        <button type="submit" hidden={true} />
-      </form>
-    </Dialog>
-  );
+      <Field label="Tên Fanpage" required={true}>
+        {(id) => <Input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="Thời Trang Nữ Công Sở" />}
+      </Field>
+      <Field label="Page ID">
+        {(id) => <Input id={id} value={externalId} onChange={(e) => setExternalId(e.target.value)} placeholder="fb_page_99182" />}
+      </Field>
+      <Field label="Quyền của VIA trên Page">
+        {(id) => <Select id={id} value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="admin">Quản trị viên</option>
+          <option value="editor">Biên tập viên</option>
+          <option value="moderator">Kiểm duyệt viên</option>
+          <option value="advertiser">Nhà quảng cáo</option>
+        </Select>}
+      </Field>
+      {create.error && <p className="text-body-sm text-error">{create.error.message}</p>}
+      <button type="submit" hidden={true} />
+    </form>
+  </Dialog>;
 }
