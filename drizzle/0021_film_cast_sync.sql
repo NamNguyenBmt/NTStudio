@@ -1,0 +1,1 @@
+ALTER TABLE `film_projects` ADD `cast_known` text;

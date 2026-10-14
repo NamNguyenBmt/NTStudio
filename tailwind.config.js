@@ -1,0 +1,120 @@
+/** Màu lấy từ biến CSS (kênh RGB) trong src/renderer/src/index.css để đổi theme sáng/tối và vẫn dùng được opacity. */
+const c = (name) => `rgb(var(--c-${name}) / <alpha-value>)`;
+
+const COLORS = [
+  "surface",
+  "surface-dim",
+  "surface-bright",
+  "surface-container-lowest",
+  "surface-container-low",
+  "surface-container",
+  "surface-container-high",
+  "surface-container-highest",
+  "surface-variant",
+  "on-surface",
+  "on-surface-variant",
+  "inverse-surface",
+  "inverse-on-surface",
+  "outline",
+  "outline-variant",
+  "primary",
+  "on-primary",
+  "primary-container",
+  "on-primary-container",
+  "inverse-primary",
+  "secondary",
+  "on-secondary",
+  "secondary-container",
+  "on-secondary-container",
+  "tertiary",
+  "on-tertiary",
+  "tertiary-container",
+  "on-tertiary-container",
+  "error",
+  "on-error",
+  "error-container",
+  "on-error-container",
+  "success",
+  "warning",
+  "danger",
+  "brand-facebook",
+  "brand-tiktok",
+  "brand-tiktok-cyan",
+  "brand-tiktok-red",
+  "brand-youtube",
+  "series-facebook",
+  "series-tiktok",
+  "series-instagram",
+  "series-youtube",
+  "overlay",
+];
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./src/renderer/index.html", "./src/renderer/src/**/*.{js,jsx}", "./src/shared/**/*.js"],
+  // ease-out có trong CSS bản phát hành 1.0.1 nhưng không còn lớp nào trong mã dùng tới – giữ để CSS trùng khớp
+  safelist: ["ease-out"],
+  theme: {
+    extend: {
+      colors: { ...Object.fromEntries(COLORS.map((n) => [n, c(n)])), background: c("surface") },
+      backgroundImage: {
+        "brand-instagram": "linear-gradient(45deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)",
+      },
+      fontFamily: {
+        sans: ['"Inter Variable"', "Inter", '"Segoe UI Variable"', '"Segoe UI"', "system-ui", "sans-serif"],
+        mono: ['"JetBrains Mono Variable"', '"JetBrains Mono"', "Consolas", "monospace"],
+      },
+      // Thang chữ Fluent
+      fontSize: {
+        display: ["2rem", { lineHeight: "2.5rem", letterSpacing: "-0.025em", fontWeight: "700" }],
+        "headline-lg": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.02em", fontWeight: "600" }],
+        "headline-md": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "-0.015em", fontWeight: "600" }],
+        "headline-sm": ["1.125rem", { lineHeight: "1.5rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+        "body-lg": ["1rem", { lineHeight: "1.5rem" }],
+        "body-md": ["0.875rem", { lineHeight: "1.25rem" }],
+        "body-sm": ["0.8125rem", { lineHeight: "1.125rem", letterSpacing: "0.005em" }],
+        "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "600" }],
+        "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.03em", fontWeight: "500" }],
+        code: ["0.75rem", { lineHeight: "1rem" }],
+      },
+      spacing: {
+        "space-xs": "0.25rem",
+        "space-sm": "0.5rem",
+        "space-md": "0.75rem",
+        "space-lg": "1rem",
+        "space-xl": "1.5rem",
+        gutter: "0.75rem",
+        titlebar: "2.5rem",
+        statusbar: "1.75rem",
+        "rail-collapsed": "3.25rem",
+        "rail-expanded": "15rem",
+      },
+      borderRadius: {
+        sm: "0.125rem",
+        DEFAULT: "0.25rem",
+        md: "0.375rem",
+        lg: "0.375rem",
+        xl: "0.5rem",
+        "2xl": "0.75rem",
+      },
+      boxShadow: {
+        highlight: "inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
+        flyout: "0 4px 16px -2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12)",
+        modal: "0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(99, 102, 241, 0.25)",
+      },
+      transitionTimingFunction: {
+        fluent: "cubic-bezier(0.16, 1, 0.3, 1)",
+      },
+      keyframes: {
+        halo: {
+          "0%": { boxShadow: "0 0 0 0 rgb(var(--c-success) / 0.6)" },
+          "100%": { boxShadow: "0 0 0 4px rgb(var(--c-success) / 0)" },
+        },
+      },
+      animation: {
+        halo: "halo 1.6s ease-out infinite",
+      },
+    },
+  },
+  plugins: [],
+};

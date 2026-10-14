@@ -1,0 +1,1 @@
+ALTER TABLE `video_projects` ADD `narration` integer DEFAULT 1 NOT NULL;

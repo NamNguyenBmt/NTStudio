@@ -1,0 +1,1 @@
+ALTER TABLE `channels` ADD `quota_blocked` integer DEFAULT false NOT NULL;

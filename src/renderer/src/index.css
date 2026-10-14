@@ -1,0 +1,176 @@
+/* Fluent Command Suite – Dark (mặc định). Giá trị là kênh RGB để Tailwind dùng được opacity. */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --c-surface: 11 19 38; /* #0b1326 */
+  --c-surface-dim: 11 19 38;
+  --c-surface-bright: 49 57 77; /* #31394d */
+  --c-surface-container-lowest: 6 14 32; /* #060e20 */
+  --c-surface-container-low: 19 27 46; /* #131b2e */
+  --c-surface-container: 23 31 51; /* #171f33 */
+  --c-surface-container-high: 34 42 61; /* #222a3d */
+  --c-surface-container-highest: 45 52 73; /* #2d3449 */
+  --c-surface-variant: 45 52 73;
+  --c-on-surface: 218 226 253; /* #dae2fd */
+  --c-on-surface-variant: 199 196 215; /* #c7c4d7 */
+  --c-inverse-surface: 218 226 253;
+  --c-inverse-on-surface: 40 48 68;
+  --c-outline: 144 143 160; /* #908fa0 */
+  --c-outline-variant: 70 69 84; /* #464554 */
+
+  --c-primary: 192 193 255; /* #c0c1ff */
+  --c-on-primary: 16 0 169; /* #1000a9 */
+  --c-primary-container: 128 131 255; /* #8083ff */
+  --c-on-primary-container: 13 0 150;
+  --c-inverse-primary: 73 75 214;
+  --c-secondary: 76 215 246; /* #4cd7f6 */
+  --c-on-secondary: 0 54 64;
+  --c-secondary-container: 3 181 211; /* #03b5d3 */
+  --c-on-secondary-container: 0 66 78;
+  --c-tertiary: 78 222 163; /* #4edea3 */
+  --c-on-tertiary: 0 56 36;
+  --c-tertiary-container: 0 136 93; /* #00885d */
+  --c-on-tertiary-container: 0 7 3;
+  --c-error: 255 180 171; /* #ffb4ab */
+  --c-on-error: 105 0 5;
+  --c-error-container: 147 0 10; /* #93000a */
+  --c-on-error-container: 255 218 214;
+
+  --c-success: 16 185 129; /* #10B981 */
+  --c-warning: 245 158 11; /* #F59E0B */
+  --c-danger: 239 68 68; /* #EF4444 */
+
+  --c-brand-facebook: 24 119 242; /* #1877F2 */
+  --c-brand-tiktok: 0 0 0;
+  --c-brand-tiktok-cyan: 0 242 254; /* #00F2FE */
+  --c-brand-tiktok-red: 254 44 85; /* #FE2C55 */
+  --c-brand-youtube: 255 0 0;
+
+  /* Màu series biểu đồ (dataviz palette, dark slot 1–3) – đã chạy validator trên nền #131b2e:
+     pass CVD all-pairs ΔE ≥ 9.4, normal-vision ≥ 20.9, contrast ≥ 3:1. Không dùng màu design gốc
+     (#c0c1ff/#4cd7f6 gần như trùng với người mù màu đỏ-lục). */
+  --c-series-facebook: 57 135 229; /* #3987e5 */
+  --c-series-tiktok: 217 89 38; /* #d95926 */
+  --c-series-instagram: 25 158 112; /* #199e70 */
+  --c-series-youtube: 204 45 45; /* #cc2d2d */
+
+  /* Lớp phủ hover / viền mảnh: sáng trên nền tối */
+  --c-overlay: 255 255 255;
+}
+
+/* Fluent Command Suite – Light. Cùng vai trò màu, bậc riêng cho nền sáng (không phải đảo màu tự động). */
+[data-theme="light"] {
+  color-scheme: light;
+  --c-surface: 246 248 253; /* #f6f8fd */
+  --c-surface-dim: 222 226 236;
+  --c-surface-bright: 255 255 255;
+  --c-surface-container-lowest: 255 255 255;
+  --c-surface-container-low: 241 244 251; /* #f1f4fb */
+  --c-surface-container: 235 239 248;
+  --c-surface-container-high: 227 232 243;
+  --c-surface-container-highest: 218 224 238;
+  --c-surface-variant: 218 224 238;
+  --c-on-surface: 17 24 41; /* #111829 */
+  --c-on-surface-variant: 66 70 92; /* #42465c */
+  --c-inverse-surface: 40 48 68;
+  --c-inverse-on-surface: 236 240 255;
+  --c-outline: 110 113 134; /* #6e7186 */
+  --c-outline-variant: 196 199 216;
+
+  --c-primary: 67 69 205; /* #4345cd – chữ/biểu tượng nhấn trên nền sáng */
+  --c-on-primary: 255 255 255;
+  --c-primary-container: 79 82 230; /* #4f52e6 – nền nút chính */
+  --c-on-primary-container: 255 255 255;
+  --c-inverse-primary: 192 193 255;
+  --c-secondary: 0 116 145; /* #007491 */
+  --c-on-secondary: 255 255 255;
+  --c-secondary-container: 0 150 178;
+  --c-on-secondary-container: 255 255 255;
+  --c-tertiary: 0 120 79; /* #00784f */
+  --c-on-tertiary: 255 255 255;
+  --c-tertiary-container: 0 136 93;
+  --c-on-tertiary-container: 255 255 255;
+  --c-error: 186 26 26; /* #ba1a1a */
+  --c-on-error: 255 255 255;
+  --c-error-container: 255 218 214;
+  --c-on-error-container: 65 0 2;
+
+  /* Trạng thái: bậc đậm hơn để chữ/huy hiệu đọc được trên nền trắng */
+  --c-success: 4 120 87; /* #047857 */
+  --c-warning: 180 83 9; /* #b45309 */
+  --c-danger: 220 38 38; /* #dc2626 */
+
+  /* Series biểu đồ (light) – validator trên nền #f1f4fb: all-pairs CVD ΔE ≥ 9.3, normal ≥ 20.8, contrast ≥ 3:1 */
+  --c-series-facebook: 42 120 214; /* #2a78d6 */
+  --c-series-tiktok: 196 82 28; /* #c4521c */
+  --c-series-instagram: 15 138 95; /* #0f8a5f */
+  --c-series-youtube: 184 32 32; /* #b82020 */
+
+  /* Lớp phủ hover / viền mảnh: tối trên nền sáng */
+  --c-overlay: 15 23 42;
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+  body {
+    @apply m-0 select-none overflow-hidden bg-surface font-sans text-body-md text-on-surface antialiased;
+    overscroll-behavior: none;
+  }
+  input,
+  textarea,
+  [contenteditable="true"] {
+    @apply select-text;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-container/70 ring-offset-0;
+  }
+}
+
+@layer utilities {
+  .app-drag {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .mica {
+    @apply backdrop-blur-xl backdrop-saturate-150;
+  }
+  /* Hàng cuộn ngang (tab, chip) – vẫn cuộn được bằng chuột/trackpad nhưng không hiện thanh cuộn */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Scrollbar mảnh kiểu Fluent */
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--c-outline-variant)) transparent;
+  }
+  .scroll-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-outline-variant) / 0.6);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

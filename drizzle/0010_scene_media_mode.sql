@@ -1,0 +1,1 @@
+ALTER TABLE `video_scenes` ADD `media_mode` text DEFAULT 'auto' NOT NULL;

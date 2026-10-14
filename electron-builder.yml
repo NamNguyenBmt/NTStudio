@@ -1,0 +1,36 @@
+appId: com.omnipage.studio
+productName: Omnira Studio
+copyright: Copyright © 2026 Omnira
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**
+  - package.json
+  - "!**/*.map"
+asarUnpack:
+  - node_modules/better-sqlite3/**
+  - node_modules/ffmpeg-static/**
+  - node_modules/ffprobe-static/**
+extraResources:
+  - from: drizzle
+    to: drizzle
+  - from: resources/fonts
+    to: fonts
+  - from: resources/icon.png
+    to: icon.png
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Omnira Studio
+  uninstallDisplayName: Omnira Studio
+publish:
+  provider: github
+  owner: buidinhdat
+  repo: OmniPageStudio
