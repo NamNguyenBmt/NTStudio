@@ -1,6 +1,5 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
-
 /* Fluent Command Suite – Dark (mặc định). Giá trị là kênh RGB để Tailwind dùng được opacity. */
 :root,
 [data-theme='dark'] {

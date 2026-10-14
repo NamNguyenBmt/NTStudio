@@ -52,13 +52,13 @@ const COLORS = [
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./src/renderer/index.html", "./src/renderer/src/**/*.{js,jsx}", "./src/shared/**/*.js"],
-  // ease-out có trong CSS bản phát hành 1.0.1 nhưng không còn lớp nào trong mã dùng tới – giữ để CSS trùng khớp
+  // ease-out có trong CSS bản phát hành nhưng lớp dùng nó nằm ở phần mã đã mất khi build (comment / kiểu TS) – giữ để CSS trùng khớp
   safelist: ["ease-out"],
   theme: {
     extend: {
       colors: { ...Object.fromEntries(COLORS.map((n) => [n, c(n)])), background: c("surface") },
       backgroundImage: {
-        "brand-instagram": "linear-gradient(45deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)",
+        "brand-instagram": "linear-gradient(45deg, #833AB4 0%, #FD1D1D 50%, #FCB045 100%)",
       },
       fontFamily: {
         sans: ['"Inter Variable"', "Inter", '"Segoe UI Variable"', '"Segoe UI"', "system-ui", "sans-serif"],
@@ -98,9 +98,9 @@ export default {
         "2xl": "0.75rem",
       },
       boxShadow: {
-        highlight: "inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
-        flyout: "0 4px 16px -2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12)",
-        modal: "0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(99, 102, 241, 0.25)",
+        highlight: "inset 0 1px 0 0 rgba(255,255,255,0.1)",
+        flyout: "0 4px 16px -2px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)",
+        modal: "0 24px 48px -12px rgba(0,0,0,0.75), 0 0 0 1px rgba(99,102,241,0.25)",
       },
       transitionTimingFunction: {
         fluent: "cubic-bezier(0.16, 1, 0.3, 1)",

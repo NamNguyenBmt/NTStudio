@@ -119,7 +119,8 @@
 41640 R/pages/studio/ActBoard.jsx
 42129 R/pages/studio/PromptExportDialog.jsx
 42325 R/pages/studio/NewProjectDialog.jsx
-42439 R/pages/studio/SceneProgressPanel.jsx
+42439 R/components/TakeProgress.jsx
+42500 R/pages/studio/SceneProgressPanel.jsx
 42589 R/pages/studio/StudioPage.jsx
 42973 R/pages/workspaces/PocketCard.jsx
 43101 R/pages/workspaces/RulesPanel.jsx

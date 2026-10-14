@@ -1,1 +1,2 @@
-*.html -text
+# Lưu nguyên byte mọi file: kiểu xuống dòng (LF/CRLF) ảnh hưởng tới bản build (template string, CSS raws, index.html)
+* -text

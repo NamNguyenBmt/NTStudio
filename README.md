@@ -1,25 +1,45 @@
 # Omnira Studio – mã nguồn dựng lại (v1.0.2)
 
 Mã nguồn được dựng lại từ bản phát hành **Omnira Studio 1.0.2** (`app.asar` trong `Omnira Studio Setup 1.0.2.exe`, build bằng electron-vite).
-Lịch sử git: tag `v1.0.1` là bản dựng lại từ 1.0.1, commit kế tiếp (tag `v1.0.2`) là thay đổi của 1.0.2
-(`git diff v1.0.1 v1.0.2` để xem 1.0.2 đổi gì: cơ chế thử lại Google Flow khi lỗi tạm thời, thẻ "Nguồn tạo ảnh & video" trong Cài đặt).
-Bản build lại từ thư mục này cho ra ứng dụng chạy giống bản gốc (chi tiết kiểm chứng ở cuối file).
+`npm run build` từ thư mục này cho ra thư mục `out/` **trùng từng byte** với `out/` trong bản phát hành 1.0.2
+(main, preload, renderer JS, CSS, `index.html`, font – kể cả tên file có hash).
+
+Lịch sử git: tag `v1.0.1` (dựng từ bản 1.0.1), `v1.0.2` (thay đổi của 1.0.2: thử lại Google Flow khi lỗi tạm thời,
+thẻ "Nguồn tạo ảnh & video" trong Cài đặt), các commit sau đó tinh chỉnh để bản build trùng byte.
 
 ## Chạy & đóng gói
 
 ```bash
-npm install            # postinstall tự build better-sqlite3 cho Electron
+npm ci                 # cài đúng theo package-lock.json; postinstall tự build better-sqlite3 cho Electron
 npm run dev            # chạy dev (electron-vite, hot reload renderer)
 npm run build          # build ra out/
 npm run dist           # build + tạo bộ cài NSIS: dist/Omnira Studio Setup 1.0.2.exe
+npm run verify         # build + harness so giao diện bản gốc / bản dựng lại (tools/verify)
+npm run db:generate    # drizzle-kit: sinh migration từ src/main/db/schema.js
 ```
 
-Nếu `npm install` chạy với `--ignore-scripts` thì cần chạy thêm:
+Nếu `npm ci` chạy với `--ignore-scripts` thì cần chạy thêm:
 `node node_modules/electron/install.js`, `node node_modules/ffmpeg-static/install.js`, `npx electron-builder install-app-deps`.
 
 Trên Windows chưa bật Developer Mode, electron-builder có thể lỗi khi giải nén `winCodeSign` (không tạo được symlink macOS).
 Cách xử lý: bật Developer Mode, hoặc giải nén `winCodeSign-2.6.0.7z` vào
 `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0` (bỏ qua lỗi symlink).
+
+### Vì sao phải giữ đúng phiên bản / định dạng
+
+Để bản build trùng byte, các điểm sau là có chủ đích, đừng "dọn dẹp":
+- Phiên bản công cụ ghim đúng như lúc build bản gốc (đầu tháng 10/2026) qua `package-lock.json` (cài bằng `npm ci`):
+  vite 5.4.21, rollup 4.63.6, postcss 8.5.28, autoprefixer 10.6.1, tailwindcss 3.4.19, electron-builder 25.1.8,
+  motion-dom 13.4.5. Rollup ≥ 4.64 tự bỏ tham số thừa → bundle khác; electron-builder 26 tự sắp lại `node_modules`
+  trong asar. Bố cục `node_modules` trong lockfile được chỉnh cho trùng với `app.asar` gốc – dùng `npm ci`, đừng
+  `npm update` hay xoá lockfile.
+- Mã nguồn giữ nguyên bố cục dòng như bản gốc (esbuild giữ chỗ xuống dòng của object/mảng/lời gọi; JSX: thuộc tính viết
+  trên nhiều dòng ⇔ `jsx(` tách dòng). Không chạy prettier trên `src/`.
+- `src/renderer/index.html`, `src/renderer/src/index.css` dùng CRLF (giống máy dựng gốc); `.gitattributes` tắt chuyển đổi
+  xuống dòng của git.
+- Các dòng `import "./x";` (side-effect) trong một số file giữ đúng **thứ tự khởi tạo module** như bản gốc: source gốc
+  có import tới những đoạn code đã bị tree-shake (không còn trong bản build), nên thứ tự được khôi phục bằng các import này.
+- `tailwind.config.js` giữ `safelist: ["ease-out"]` và giá trị viết đúng như bản gốc (chữ hoa trong mã màu, `rgba(` không dấu cách).
 
 ## Cấu trúc
 
@@ -35,38 +55,32 @@ src/
     src/app, components (ui, shell, billing, film, icons), lib, stores, pages/* (mỗi màn hình một thư mục)
 drizzle/       migration SQL + snapshot (đóng gói vào resources/drizzle)
 resources/     icon.png, fonts/Montserrat-Black.ttf (dùng cho phụ đề ffmpeg)
-tools/reconstruct/  công cụ đã dùng để tách bundle → mã nguồn (không thuộc bản build), xem bên dưới
+tools/verify/       harness so giao diện bản gốc ↔ bản dựng lại (không đóng gói)
+tools/reconstruct/  công cụ đã dùng để tách bundle → mã nguồn (không đóng gói)
 ```
 
 ## Những gì khôi phục được / không khôi phục được
 
-- **Giữ nguyên:** toàn bộ logic, chuỗi tiếng Việt, comment trong main process (bản build không nén mã),
-  tên hàm/biến/component gốc, cấu trúc JSX, CSS (biến theme + comment), cấu hình Tailwind suy ra từ CSS đã biên dịch.
-- **Đã khôi phục tự động:** chia file module, `import`/`export`, JSX từ các lời gọi `jsx()`, tên biến bị rollup thêm hậu tố
-  (`id$1` → `id`, `token2` → `token`), module dùng chung `src/shared` (main và renderer mỗi bên chỉ giữ một phần sau tree-shaking,
-  đã gộp lại), đúng phiên bản thư viện (kể cả `motion-dom` 13.4.5 của framer-motion).
+- **Giữ nguyên:** toàn bộ logic, chuỗi tiếng Việt, comment (cả main lẫn renderer), tên hàm/biến/component gốc, bố cục dòng,
+  CSS (biến theme + comment), cấu hình Tailwind suy ra từ CSS đã biên dịch, schema DB (drizzle-kit xác nhận khớp migration).
 - **Không thể khôi phục** vì không còn trong bản build:
   - kiểu TypeScript (mã gốc là TS, bị esbuild xoá kiểu) → mã nguồn ở dạng `.js`/`.jsx`;
-  - comment trong renderer (đã bị loại khi biên dịch JSX) và mọi đoạn code chết đã bị tree-shake;
+  - các đoạn code chết đã bị tree-shake (chỉ còn dấu vết là thứ tự module – xem phần import side-effect ở trên);
   - tên file/thư mục gốc: tên file ở đây được đặt theo nội dung (component/chức năng chính của file).
 
 ## Kiểm chứng
 
-- Build lại bằng `electron-vite build` rồi so từng câu lệnh cấp cao nhất với bundle gốc (bỏ qua khác biệt tên biến):
-  1.0.2: main 1293/1294, preload 6/6, renderer 2665/2666 (1.0.1: 1283/1284, 6/6, 2658/2659). Câu lệnh lệch ở main là do rollup bản mới tự bỏ một tham số không dùng tới;
-  câu lệch ở renderer chỉ khác tên biến trong template string.
-- Thứ tự module trong bundle không trùng hoàn toàn: source gốc còn có các `import` mà phần code dùng chúng đã bị tree-shake,
-  nên không còn dấu vết trong bản build. Việc này không đổi hành vi.
-- CSS: trùng khớp từng rule với CSS gốc của cả hai bản (chỉ khác chỗ xuống dòng). Tên file font băm trùng với bản gốc.
-- Chạy thật bằng Electron 33.4.11 (thư mục dữ liệu riêng): DOM màn hình khởi động của bản dựng lại **giống hệt** bản gốc (đã thử cả 1.0.1 và 1.0.2),
-  không có lỗi console.
-- Các màn hình sau đăng nhập chưa được kiểm thử bằng chạy thật (cần tài khoản Omnira và license).
+- `out/` build từ nguồn so với `out/` trong `app.asar` 1.0.2: **trùng 100% từng byte** (`diff -r`).
+- Harness `tools/verify` (backend thật của bản dựng lại + dữ liệu mẫu, renderer gốc và renderer dựng lại chạy song song):
+  21/21 màn hình và 34/34 thao tác (mở hộp thoại, đổi tab, bộ lọc) có DOM giống hệt, không lỗi console.
+- Chạy thật bằng Electron 33.4.11 (thư mục dữ liệu riêng): màn hình khởi động giống hệt bản gốc; chế độ dev chạy bình thường.
 
 ## tools/reconstruct
 
-`run.js` (tách 3 bundle theo `main-manifest.txt` / `r-manifest.txt`) → `merge.js` (gộp `src/shared`) → `fmt.mjs` (prettier) →
-`finalize.js` (chép vào project). `classify.js` + `vendormap.js` tách code app khỏi thư viện trong bundle renderer;
-`compare.js` so bundle build lại với bundle gốc; `shoot.js` chạy app bằng playwright và chụp màn hình/DOM để so sánh.
-`input/` + `main-manifest.txt`/`r-manifest.txt` là dữ liệu của 1.0.1; `1.0.2/` + `run-1.0.2.js` là của 1.0.2.
+Quy trình cho 1.0.2: `run-1.0.2.js` (tách 3 bundle theo `1.0.2/main-manifest.txt`, `1.0.2/r-manifest.txt`; giữ nguyên văn bản
+gốc, dựng JSX, suy thứ tự import) → `merge.js` (gộp `src/shared`) → `finalize.js` (chép vào project) → `mkindexcss.py`
+(dựng `index.css` từ CSS gốc). `compare.js` / `textdiff.js` so bundle theo câu lệnh / nguyên văn; `classify.js` +
+`vendormap.js` tách code app khỏi thư viện trong bundle renderer.
 Với bản mới: giải nén `app.asar` từ bộ cài (7-Zip mở được file NSIS), `remap.js` chuyển manifest cũ sang vị trí mới và liệt kê
-các khai báo mới cần xếp file, `depver.js` so phiên bản thư viện đóng gói. Một số script còn đường dẫn tuyệt đối của máy dựng.
+các khai báo mới cần xếp file, `depver.js` so phiên bản thư viện đóng gói, `verat.js` tra phiên bản công cụ tại ngày build.
+Một số script còn đường dẫn tuyệt đối của máy dựng. (`run.js` + `input/` là dữ liệu bản 1.0.1, theo quy trình cũ.)

@@ -5,9 +5,10 @@ directories:
   buildResources: resources
   output: dist
 files:
-  - out/**
+  - out/main/**
+  - out/preload/**
+  - out/renderer/**
   - package.json
-  - "!**/*.map"
 asarUnpack:
   - node_modules/better-sqlite3/**
   - node_modules/ffmpeg-static/**

@@ -43,8 +43,6 @@ const mainJsx = path.join(proj, "src/renderer/src/main.jsx");
 let code = fs.readFileSync(mainJsx, "utf8");
 const css = [
   'import "@fontsource/montserrat/900.css";',
-  'import "@fontsource-variable/inter";',
-  'import "@fontsource-variable/jetbrains-mono";',
   'import "./index.css";',
 ].join("\n");
 if (!code.includes("./index.css")) {
