@@ -146,10 +146,10 @@ export async function facebookLogin(parent) {
   if (await metaViaCloud()) {
     const tok = await cloudLogin("facebook", fbScopes().join(","), { title: "Kết nối Facebook", provider: "Facebook", parent });
     token = String(tok.access_token ?? "");
-    if (!token) throw new PublishError("permanent", "Omnira Cloud không trả token Facebook");
+    if (!token) throw new PublishError("permanent", "NT Cloud không trả token Facebook");
   } else {
     if (!appId || !appSecret)
-      throw new PublishError("permanent", "Chưa cấu hình Ứng dụng Meta – vào Cài đặt → Ứng dụng Meta để nhập App ID và App Secret (một lần), hoặc liên hệ Omnira để bật kết nối sẵn");
+      throw new PublishError("permanent", "Chưa cấu hình Ứng dụng Meta – vào Cài đặt → Ứng dụng Meta để nhập App ID và App Secret (một lần), hoặc liên hệ NT để bật kết nối sẵn");
     const code = await askForCode(appId, metaConfigId(), parent);
     token = await exchangeCode(appId, appSecret, code, metaRedirectUri(), signal);
   }

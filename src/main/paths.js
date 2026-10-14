@@ -32,7 +32,7 @@ export function writeDataMarker(root = dataRoot()) {
   const f = join(root, DATA_MARKER);
   if (existsSync(f)) return;
   mkdirSync(root, { recursive: true });
-  writeFileSync(f, JSON.stringify({ app: "Omnira Studio", version: 1, createdAt: (new Date()).toISOString() }, null, 2));
+  writeFileSync(f, JSON.stringify({ app: "NT Studio", version: 1, createdAt: (new Date()).toISOString() }, null, 2));
 }
 
 export const authRoot = () => join(dataRoot(), "auth");

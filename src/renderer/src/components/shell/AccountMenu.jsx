@@ -57,7 +57,7 @@ export function AccountMenu() {
         <div className="truncate text-label-md text-on-surface">{user.displayName}</div>
         <div className="truncate text-body-sm text-on-surface-variant">{user.email}</div>
         <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-outline">
-          {"Tài khoản Omnira · "}
+          {"Tài khoản NT · "}
           {lic?.planName ?? "chưa có gói"}
           {lic?.trial ? " (dùng thử)" : ""}
         </div>

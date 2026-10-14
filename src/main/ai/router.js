@@ -174,7 +174,7 @@ async function omniraText(req, opts) {
     return { text: res.text, providerLabel: OMNIRA_AI_LABEL, model: res.model, costUsd: 0, attempts: [{ provider: OMNIRA_AI_LABEL }], imagesSeen: res.imagesSeen ?? 0 };
   } catch (err) {
     const e = err instanceof AiError ? err : new AiError("unknown", err instanceof Error ? err.message : String(err));
-    console.warn(`[ai] ${opts.feature} · AI Omnira → ${e.kind}${e.status ? ` (${e.status})` : ""}`);
+    console.warn(`[ai] ${opts.feature} · AI NT → ${e.kind}${e.status ? ` (${e.status})` : ""}`);
     throw e;
   }
 }

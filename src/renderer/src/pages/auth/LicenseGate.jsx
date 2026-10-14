@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { call, useApiQuery, useApiMutation } from "../../lib/api";
-import { Download, LoaderCircle, LogOut, Network, RefreshCw, ShieldAlert, TriangleAlert } from "lucide-react";
+import { Download, LoaderCircle, LogOut, RefreshCw, ShieldAlert, TriangleAlert } from "lucide-react";
+import { AppLogo } from "../../components/shell/AppLogo";
 import { Button } from "../../components/ui/Button";
 import { ConfirmHost } from "../../components/ui/confirm";
 import { toast, Toaster } from "../../components/ui/toast";
@@ -18,7 +19,7 @@ const TITLE = {
   device_limit: "Đã dùng hết số máy của gói",
   revoked: "Máy này đã bị gỡ khỏi tài khoản",
   expired: "Cần kết nối mạng để kiểm tra license",
-  relogin: "Cần đăng nhập lại tài khoản Omnira",
+  relogin: "Cần đăng nhập lại tài khoản NT",
   locked: "Tài khoản đã bị khóa"
 };
 
@@ -26,8 +27,8 @@ function Frame({ children }) {
   return <div className="flex h-screen flex-col bg-background">
     <header className="app-drag flex h-titlebar shrink-0 items-center justify-between">
       <div className={`flex items-center gap-space-xs ${isMac ? "pl-[76px]" : "pl-space-md"}`}>
-        <Network size={18} className="text-secondary" />
-        <span className="text-label-md font-semibold text-on-surface">Omnira Studio</span>
+        <AppLogo size={18} />
+        <span className="text-label-md font-semibold text-on-surface">NT Studio</span>
       </div>
       <div className="flex items-center"><ThemeToggle className="mr-space-sm" />{!isMac && <WindowControls />}</div>
     </header>
@@ -61,7 +62,7 @@ export function UpdateRequired({ info }) {
   return <Frame>
     <div className="mx-auto mt-space-xl flex max-w-[520px] flex-col items-center gap-space-md rounded-2xl border border-outline-variant/30 bg-surface-container-low p-space-xl text-center">
       <Download size={36} className="text-primary" />
-      <h1 className="text-headline-md text-on-surface">Cần cập nhật Omnira Studio</h1>
+      <h1 className="text-headline-md text-on-surface">Cần cập nhật NT Studio</h1>
       <p className="text-body-sm text-on-surface-variant">
         {"Phiên bản "}
         {info.currentVersion}
@@ -95,7 +96,7 @@ export function LicenseGate({ state }) {
     return <Frame>
       <div className="mt-space-xl flex items-center justify-center gap-space-sm text-on-surface-variant">
         <LoaderCircle size={18} className="animate-spin" />
-        {" Đang kiểm tra license với Omnira Cloud…"}
+        {" Đang kiểm tra license với NT Cloud…"}
       </div>
     </Frame>;
   const again = () => recheck.mutate(void 0, {
@@ -110,7 +111,7 @@ export function LicenseGate({ state }) {
           <div>
             <h1 className="text-headline-sm text-on-surface">{TITLE[lic.status]}</h1>
             <p className="mt-1 text-body-sm text-on-surface-variant">
-              {lic.message ?? "Mua hoặc gia hạn gói để tiếp tục dùng Omnira Studio. Dữ liệu trên máy vẫn được giữ nguyên."}
+              {lic.message ?? "Mua hoặc gia hạn gói để tiếp tục dùng NT Studio. Dữ liệu trên máy vẫn được giữ nguyên."}
             </p>
             <p className="mt-1 text-label-sm text-outline">
               {state.user?.email}

@@ -85,7 +85,7 @@ export function NotificationBell() {
         <span className="text-label-md text-on-surface">Thông báo</span>
         {data?.offline && <span className="flex items-center gap-1 text-label-sm text-outline">
           <WifiOff size={12} />
-          {" Không kết nối được Omnira"}
+          {" Không kết nối được NT"}
         </span>}
       </div>
       <div className="flex-1 overflow-y-auto">

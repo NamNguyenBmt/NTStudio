@@ -17,7 +17,7 @@ export function CloudBanner() {
       tone: "info",
       icon: Download,
       text: <>
-        {"Đã có Omnira Studio "}
+        {"Đã có NT Studio "}
         {info.latestVersion}
         {" (bạn đang dùng "}
         {info.currentVersion}
@@ -28,13 +28,13 @@ export function CloudBanner() {
         </button>}
       </>
     });
-  if (lic?.needRelogin) notices.push({ id: "relogin", tone: "warn", icon: TriangleAlert, text: "Phiên đăng nhập Omnira đã hết hạn – đăng xuất rồi đăng nhập lại để tiếp tục gia hạn license." });
+  if (lic?.needRelogin) notices.push({ id: "relogin", tone: "warn", icon: TriangleAlert, text: "Phiên đăng nhập NT đã hết hạn – đăng xuất rồi đăng nhập lại để tiếp tục gia hạn license." });
   if (lic?.status === "offline")
     notices.push({
       id: "offline",
       tone: "warn",
       icon: WifiOff,
-      text: `Không kết nối được Omnira Cloud – đang dùng ngoại tuyến tới ${lic.tokenExpiresAt ? new Date(lic.tokenExpiresAt).toLocaleString("vi-VN") : "—"}.`
+      text: `Không kết nối được NT Cloud – đang dùng ngoại tuyến tới ${lic.tokenExpiresAt ? new Date(lic.tokenExpiresAt).toLocaleString("vi-VN") : "—"}.`
     });
   const daysLeft = lic?.entitlementEndsAt ? Math.ceil((new Date(lic.entitlementEndsAt).getTime() - Date.now()) / 864e5) : null;
   if (daysLeft != null && daysLeft <= 7)

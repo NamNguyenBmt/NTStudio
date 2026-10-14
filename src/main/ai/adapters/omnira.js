@@ -4,12 +4,12 @@ import { AiError } from "../providers";
 import "./misc";
 import "./openai";
 
-export const OMNIRA_AI_LABEL = "AI Omnira";
+export const OMNIRA_AI_LABEL = "AI NT";
 
 function token() {
   const uid = currentUser();
   const t = uid ? readCloudSession(uid)?.customerToken : null;
-  if (!t) throw new AiError("no_provider", "Chưa đăng nhập Omnira – không dùng được AI Omnira");
+  if (!t) throw new AiError("no_provider", "Chưa đăng nhập NT – không dùng được AI NT");
   return t;
 }
 

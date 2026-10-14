@@ -132,7 +132,7 @@ export async function youtubeLogin(parent = null) {
   const clientSecret = youtubeClientSecret();
   if (await cloudOAuthEnabled("google")) {
     const tok2 = await cloudLogin("google", YOUTUBE_SCOPES.join(" "), { title: "Kết nối YouTube", provider: "Google", parent, external: true });
-    if (!tok2.access_token) throw new PublishError("permanent", "Omnira Cloud không trả token Google");
+    if (!tok2.access_token) throw new PublishError("permanent", "NT Cloud không trả token Google");
     if (!tok2.refresh_token) throw new PublishError("permanent", "Google không trả refresh token – gỡ quyền của ứng dụng tại myaccount.google.com/permissions rồi kết nối lại");
     if (!(tok2.scope ?? "").split(" ").some((s) => s.endsWith("youtube.upload")))
       throw new PublishError("permanent", 'Chưa cấp quyền tải video lên YouTube – kết nối lại và tick đồng ý quyền "Quản lý video YouTube"');
@@ -148,7 +148,7 @@ export async function youtubeLogin(parent = null) {
     };
   }
   if (!clientId || !clientSecret)
-    throw new PublishError("permanent", "Chưa cấu hình Ứng dụng YouTube – vào Hướng dẫn kết nối → YouTube để nhập Client ID và Client Secret (một lần), hoặc liên hệ Omnira để bật kết nối sẵn");
+    throw new PublishError("permanent", "Chưa cấu hình Ứng dụng YouTube – vào Hướng dẫn kết nối → YouTube để nhập Client ID và Client Secret (một lần), hoặc liên hệ NT để bật kết nối sẵn");
   const verifier = randomBytes(48).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
   const state = randomBytes(16).toString("hex");

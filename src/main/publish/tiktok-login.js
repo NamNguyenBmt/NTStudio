@@ -52,10 +52,10 @@ export async function tiktokLogin(parent) {
       title: "Kết nối TikTok",
       provider: "TikTok",
       parent,
-      blocked: tiktokBlocked(cfg0?.tiktok.redirectUri ?? "trang callback của Omnira Cloud"),
+      blocked: tiktokBlocked(cfg0?.tiktok.redirectUri ?? "trang callback của NT Cloud"),
       lostFlow: tiktokLostFlow
     });
-    if (!tok2.access_token) throw new PublishError("permanent", "Omnira Cloud không trả token TikTok");
+    if (!tok2.access_token) throw new PublishError("permanent", "NT Cloud không trả token TikTok");
     const cfg = await cloudOAuthConfig();
     return finishTiktok(
       { access_token: tok2.access_token, expires_in: tok2.expires_in ?? 86400, refresh_token: tok2.refresh_token ?? "", open_id: tok2.open_id ?? "", scope: tok2.scope },
@@ -64,7 +64,7 @@ export async function tiktokLogin(parent) {
     );
   }
   if (!clientKey || !clientSecret)
-    throw new PublishError("permanent", "Chưa cấu hình Ứng dụng TikTok – vào Cài đặt → Ứng dụng TikTok để nhập Client Key và Client Secret (một lần), hoặc liên hệ Omnira để bật kết nối sẵn");
+    throw new PublishError("permanent", "Chưa cấu hình Ứng dụng TikTok – vào Cài đặt → Ứng dụng TikTok để nhập Client Key và Client Secret (một lần), hoặc liên hệ NT để bật kết nối sẵn");
   const redirectUri = tiktokRedirectUri();
   const state = randomBytes(16).toString("hex");
   const { verifier, challenge } = pkce();

@@ -61,7 +61,7 @@ function refreshMenu() {
   const p = backgroundPrefs();
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: "Mở Omnira Studio", click: showWindow },
+      { label: "Mở NT Studio", click: showWindow },
       { type: "separator" },
       { label: "Chạy nền khi đóng cửa sổ", type: "checkbox", checked: p.closeToTray, click: (i) => setBackgroundPrefs({ closeToTray: i.checked }) },
       {
@@ -83,7 +83,7 @@ export function setupTray(win) {
     quitting = true;
   });
   tray = new Tray(iconImage());
-  tray.setToolTip("Omnira Studio – đang chạy nền (lập lịch đăng bài, hộp thư, render)");
+  tray.setToolTip("NT Studio – đang chạy nền (lập lịch đăng bài, hộp thư, render)");
   tray.on("click", showWindow);
   tray.on("double-click", showWindow);
   refreshMenu();
@@ -98,7 +98,7 @@ export function hideOnClose(w) {
     if (!s.hintShown && Notification.isSupported()) {
       save({ hintShown: true });
       const n = new Notification({
-        title: "Omnira Studio vẫn đang chạy nền",
+        title: "NT Studio vẫn đang chạy nền",
         body: "Lập lịch đăng bài và hộp thư vẫn hoạt động. Mở lại hoặc thoát hẳn từ biểu tượng ở khay hệ thống (góc phải thanh taskbar)."
       });
       n.on("click", showWindow);

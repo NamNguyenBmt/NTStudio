@@ -10,7 +10,7 @@ export function OmniraAiCard() {
   return <div className="flex flex-col gap-space-sm rounded-lg border border-secondary/30 bg-secondary-container/20 p-space-md">
     <div className="flex items-center gap-space-sm">
       <Sparkles size={16} className="text-secondary" />
-      <span className="text-label-md font-semibold text-on-surface">AI Omnira</span>
+      <span className="text-label-md font-semibold text-on-surface">AI NT</span>
       {!data ? null : !data.inUse ? <Badge tone="neutral">Không dùng – đang dùng key riêng</Badge> : q?.available ? <Badge tone="success">Đang dùng</Badge> : <Badge tone="warning">Tạm không dùng được</Badge>}
     </div>
     <p className="text-body-sm text-on-surface-variant">

@@ -31,7 +31,7 @@ export async function cloud(path, init = {}) {
       signal: AbortSignal.timeout(init.timeoutMs ?? 2e4)
     });
   } catch (err) {
-    throw new CloudError("OFFLINE", `Không kết nối được Omnira Cloud (${err instanceof Error ? err.message : String(err)}) – kiểm tra mạng`, 0);
+    throw new CloudError("OFFLINE", `Không kết nối được NT Cloud (${err instanceof Error ? err.message : String(err)}) – kiểm tra mạng`, 0);
   }
   const text = await res.text();
   let data = null;
@@ -41,8 +41,8 @@ export async function cloud(path, init = {}) {
   }
   if (!res.ok) {
     const e = data ?? {};
-    if (res.status >= 500 && !e.code) throw new CloudError("OFFLINE", `Omnira Cloud đang lỗi (HTTP ${res.status}) – thử lại sau`, res.status);
-    throw new CloudError(e.code ?? `HTTP_${res.status}`, e.message ?? `Omnira Cloud báo lỗi HTTP ${res.status}`, res.status);
+    if (res.status >= 500 && !e.code) throw new CloudError("OFFLINE", `NT Cloud đang lỗi (HTTP ${res.status}) – thử lại sau`, res.status);
+    throw new CloudError(e.code ?? `HTTP_${res.status}`, e.message ?? `NT Cloud báo lỗi HTTP ${res.status}`, res.status);
   }
   return data;
 }

@@ -40,17 +40,17 @@ export function ConnectFacebookButton({
         <p className="rounded-lg bg-secondary/10 p-space-sm text-on-surface">
           {"Nếu khi đăng nhập bạn đã bỏ chọn quyền nào đó, bấm "}
           <b>Kết nối lại Facebook</b>
-          {" và giữ nguyên các quyền được đề xuất. Vẫn thiếu thì liên hệ hỗ trợ Omnira – bạn không cần tự cấu hình gì."}
+          {" và giữ nguyên các quyền được đề xuất. Vẫn thiếu thì liên hệ hỗ trợ NT – bạn không cần tự cấu hình gì."}
         </p>
       </div>
     </Dialog>
     <Button
       {...props}
       disabled={connect.isPending || props.disabled}
-      title={ready ? "Đăng nhập Facebook, chọn Fanpage/Instagram và bấm Đồng ý" : "Kết nối Facebook chưa được bật – liên hệ hỗ trợ Omnira"}
+      title={ready ? "Đăng nhập Facebook, chọn Fanpage/Instagram và bấm Đồng ý" : "Kết nối Facebook chưa được bật – liên hệ hỗ trợ NT"}
       onClick={() => {
         if (!ready) {
-          toast.error("Kết nối Facebook chưa được bật cho tài khoản – liên hệ hỗ trợ Omnira");
+          toast.error("Kết nối Facebook chưa được bật cho tài khoản – liên hệ hỗ trợ NT");
           return;
         }
         connect.mutate(
@@ -88,10 +88,10 @@ export function ConnectTiktokButton({
   return <Button
     {...props}
     disabled={connect.isPending || props.disabled}
-    title={ready ? "Đăng nhập TikTok và bấm Đồng ý" : "Kết nối TikTok chưa được bật – liên hệ hỗ trợ Omnira"}
+    title={ready ? "Đăng nhập TikTok và bấm Đồng ý" : "Kết nối TikTok chưa được bật – liên hệ hỗ trợ NT"}
     onClick={() => {
       if (!ready) {
-        toast.error("Kết nối TikTok chưa được bật cho tài khoản – liên hệ hỗ trợ Omnira");
+        toast.error("Kết nối TikTok chưa được bật cho tài khoản – liên hệ hỗ trợ NT");
         return;
       }
       connect.mutate(
@@ -133,10 +133,10 @@ export function ConnectYoutubeButton({
   return <Button
     {...props}
     disabled={props.disabled}
-    title={ready ? "Mở trình duyệt để đăng nhập Google và chọn kênh YouTube" : "Kết nối YouTube chưa được bật – liên hệ hỗ trợ Omnira"}
+    title={ready ? "Mở trình duyệt để đăng nhập Google và chọn kênh YouTube" : "Kết nối YouTube chưa được bật – liên hệ hỗ trợ NT"}
     onClick={() => {
       if (!ready) {
-        toast.error("Kết nối YouTube chưa được bật cho tài khoản – liên hệ hỗ trợ Omnira");
+        toast.error("Kết nối YouTube chưa được bật cho tài khoản – liên hệ hỗ trợ NT");
         return;
       }
       toast.info("Đã mở trình duyệt – đăng nhập Google, chọn kênh và bấm Cho phép");

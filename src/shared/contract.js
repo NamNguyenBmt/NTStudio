@@ -181,7 +181,7 @@ export const UNLICENSED_ENDPOINTS = new Set([
 ]);
 
 export const contract = {
-  // Đăng nhập bằng tài khoản Omnira (cloud); dữ liệu vẫn lưu trên máy theo từng tài khoản
+  // Đăng nhập bằng tài khoản NT (cloud); dữ liệu vẫn lưu trên máy theo từng tài khoản
   "auth.state": def()(none),
   // Thư mục dữ liệu (chọn nơi lưu, chuyển máy)
   "storage.location": def()(none),
@@ -217,7 +217,7 @@ export const contract = {
   "auth.updateProfile": def()(z.object({ displayName: z.string().trim().min(1).max(80) })),
   /** Kiểm tra mã giới thiệu trước khi đăng ký → tên AM */
   "auth.checkReferral": def()(z.object({ code: z.string().trim().min(1).max(20) })),
-  // License & mua gói (Omnira Cloud)
+  // License & mua gói (NT Cloud)
   "license.state": def()(none),
   /** Kiểm tra lại với cloud ngay (heartbeat) */
   "license.refresh": def()(none),
@@ -277,7 +277,7 @@ export const contract = {
   ),
   "channels.verify": def()(byId),
   /** Ứng dụng Meta (App ID + App Secret) dùng cho "Kết nối Facebook" – khai báo một lần */
-  /** viaCloud: chưa tự cấu hình ứng dụng riêng → kết nối bằng ứng dụng Omnira trên cloud */
+  /** viaCloud: chưa tự cấu hình ứng dụng riêng → kết nối bằng ứng dụng NT trên cloud */
   "integrations.meta": def()(none),
   /** Kết nối Facebook thì lấy luôn tài khoản Instagram liên kết với Fanpage (mặc định bật) */
   "integrations.setInstagram": def()(z.object({ enabled: z.boolean() })),
@@ -613,7 +613,7 @@ export const contract = {
   "ai.test": def()(byId),
   "ai.testAll": def()(none),
   "ai.routing": def()(none),
-  /** AI Omnira (AI văn bản mặc định của cloud): đang dùng không (chưa có key văn bản riêng) + hạn mức còn lại */
+  /** AI NT (AI văn bản mặc định của cloud): đang dùng không (chưa có key văn bản riêng) + hạn mức còn lại */
   "ai.omnira": def()(none),
   /** Sắp lại thứ tự ưu tiên các nhà cung cấp text (đầu danh sách = gọi trước) */
   "ai.reorder": def()(z.object({ ids: z.array(id).min(1).max(20) })),

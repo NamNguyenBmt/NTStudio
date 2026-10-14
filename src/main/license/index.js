@@ -155,7 +155,7 @@ function applyError(e) {
   };
   if (err.status === 401 || err.code === "UNAUTHORIZED") {
     const claims = verifyLicenseToken(readCloudSession(state.localUserId)?.licenseToken);
-    set({ claims, status: claims ? "active" : "relogin", needRelogin: true, message: "Phiên đăng nhập Omnira đã hết hạn – đăng xuất rồi đăng nhập lại", lastCheckedAt: now });
+    set({ claims, status: claims ? "active" : "relogin", needRelogin: true, message: "Phiên đăng nhập NT đã hết hạn – đăng xuất rồi đăng nhập lại", lastCheckedAt: now });
     return;
   }
   set({ claims: null, status: map[err.code] ?? "expired", message: err.message, lastCheckedAt: now, lastOnlineAt: now });
@@ -181,7 +181,7 @@ async function activateNow() {
   if (!state) throw new Error("Chưa đăng nhập");
   const token = readCloudSession(state.localUserId)?.customerToken;
   if (!token) {
-    set({ status: "relogin", needRelogin: true, message: "Đăng nhập lại tài khoản Omnira" });
+    set({ status: "relogin", needRelogin: true, message: "Đăng nhập lại tài khoản NT" });
     return licenseView();
   }
   try {
@@ -198,7 +198,7 @@ export function refreshLicense() {
       if (!state) return licenseView();
       const token = readCloudSession(state.localUserId)?.customerToken;
       if (!token) {
-        applyError(new CloudError("UNAUTHORIZED", "Chưa đăng nhập Omnira", 401));
+        applyError(new CloudError("UNAUTHORIZED", "Chưa đăng nhập NT", 401));
         return licenseView();
       }
       try {

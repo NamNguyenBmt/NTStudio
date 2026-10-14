@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { call, useApiQuery, useApiMutation } from "../../lib/api";
-import { ArrowLeft, BadgeCheck, Check, Cloud, FolderInput, HardDrive, KeyRound, LoaderCircle, LogIn, MailCheck, Network, RotateCw, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Check, Cloud, FolderInput, HardDrive, KeyRound, LoaderCircle, LogIn, MailCheck, RotateCw, ShieldCheck, UserPlus } from "lucide-react";
+import { AppLogo } from "../../components/shell/AppLogo";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Field } from "../../components/ui/Field";
@@ -65,8 +66,8 @@ export function LoginPage({ state, onAuthed }) {
   return <div className="flex h-screen flex-col bg-background">
     <header className="app-drag flex h-titlebar shrink-0 items-center justify-between">
       <div className={`flex items-center gap-space-xs ${isMac ? "pl-[76px]" : "pl-space-md"}`}>
-        <Network size={18} className="text-secondary" />
-        <span className="text-label-md font-semibold text-on-surface">Omnira Studio</span>
+        <AppLogo size={18} />
+        <span className="text-label-md font-semibold text-on-surface">NT Studio</span>
       </div>
       <div className="flex items-center"><ThemeToggle className="mr-space-sm" />{!isMac && <WindowControls />}</div>
     </header>
@@ -75,8 +76,8 @@ export function LoginPage({ state, onAuthed }) {
         <section className="hidden flex-col justify-between gap-space-xl bg-gradient-to-br from-primary-container/30 via-surface-container to-secondary-container/20 p-space-xl md:flex">
           <div>
             <div className="flex items-center gap-space-sm">
-              <Network size={28} className="text-secondary" />
-              <span className="text-headline-md text-on-surface">Omnira Studio</span>
+              <AppLogo size={28} />
+              <span className="text-headline-md text-on-surface">NT Studio</span>
             </div>
             <p className="mt-space-sm text-body-md text-on-surface-variant">
               {"Quản lý & tự động hóa đa kênh Facebook · TikTok · Instagram · YouTube trên máy của bạn."}
@@ -93,7 +94,7 @@ export function LoginPage({ state, onAuthed }) {
             </li>
             <li className="flex gap-space-sm">
               <Cloud size={16} className="mt-0.5 shrink-0 text-tertiary" />
-              Đăng nhập bằng tài khoản Omnira – dùng trên các máy theo gói, mất mạng vẫn chạy được vài ngày.
+              Đăng nhập bằng tài khoản NT – dùng trên các máy theo gói, mất mạng vẫn chạy được vài ngày.
             </li>
             <li className="flex gap-space-sm">
               <BadgeCheck size={16} className="mt-0.5 shrink-0 text-tertiary" />
@@ -103,9 +104,9 @@ export function LoginPage({ state, onAuthed }) {
         </section>
         {verify ? <VerifyEmailStep pending={verify} onAuthed={onAuthed} onBack={() => setVerify(null)} /> : forgot ? <ForgotPasswordStep initialEmail={email} remember={remember} onAuthed={onAuthed} onBack={() => setForgot(false)} /> : <section className="flex flex-col gap-space-md p-space-xl">
           <div>
-            <h1 className="text-headline-md text-on-surface">{register ? "Tạo tài khoản Omnira" : "Đăng nhập Omnira"}</h1>
+            <h1 className="text-headline-md text-on-surface">{register ? "Tạo tài khoản NT" : "Đăng nhập NT"}</h1>
             <p className="text-body-sm text-on-surface-variant">
-              {register ? "Dùng thử miễn phí ngay – dữ liệu (kênh, video, lịch đăng) lưu trên máy của bạn." : "Đăng nhập bằng tài khoản Omnira của bạn."}
+              {register ? "Dùng thử miễn phí ngay – dữ liệu (kênh, video, lịch đăng) lưu trên máy của bạn." : "Đăng nhập bằng tài khoản NT của bạn."}
             </p>
           </div>
           <SegmentedControl
@@ -193,7 +194,7 @@ export function LoginPage({ state, onAuthed }) {
             </Button>
           </form>
           {state.hasUsers && <p className="text-label-sm text-on-surface-variant">
-            {"Đã dùng app trên máy này từ trước? Đăng ký / đăng nhập Omnira bằng "}
+            {"Đã dùng app trên máy này từ trước? Đăng ký / đăng nhập NT bằng "}
             <b>cùng email và mật khẩu cũ</b>
             {" để giữ nguyên dữ liệu."}
           </p>}
@@ -263,11 +264,11 @@ function ForgotPasswordStep({ initialEmail, remember, onAuthed, onBack }) {
         {sent ? <>
           {"Nếu "}
           <b className="break-all text-on-surface">{sent.email}</b>
-          {" có tài khoản Omnira, mã 6 số đã được gửi tới email này (hiệu lực"}
+          {" có tài khoản NT, mã 6 số đã được gửi tới email này (hiệu lực"}
           {" "}
           {Math.round(sent.expiresInSeconds / 60)}
           {" phút). Không thấy thư? Xem thêm mục Spam / Quảng cáo."}
-        </> : "Nhập email tài khoản Omnira – chúng tôi gửi mã 6 số để bạn đặt mật khẩu mới. Dữ liệu trên máy được giữ nguyên."}
+        </> : "Nhập email tài khoản NT – chúng tôi gửi mã 6 số để bạn đặt mật khẩu mới. Dữ liệu trên máy được giữ nguyên."}
       </p>
     </div>
     {!sent ? <form

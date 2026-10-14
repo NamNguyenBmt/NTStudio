@@ -19,7 +19,7 @@ export function NavRail() {
   const locked = (f) => !!f && !!lic && !lic.features.includes(f);
   const { data: appInfo } = useApiQuery("cloud.appInfo", void 0, { staleTime: 10 * 6e4, refetchInterval: 30 * 6e4 });
   const version = appInfo ? `v${appInfo.currentVersion}` : null;
-  const versionTitle = appInfo ? `Omnira Studio ${appInfo.currentVersion}${appInfo.updateAvailable && appInfo.latestVersion ? ` – đã có bản mới ${appInfo.latestVersion}` : ""}` : void 0;
+  const versionTitle = appInfo ? `NT Studio ${appInfo.currentVersion}${appInfo.updateAvailable && appInfo.latestVersion ? ` – đã có bản mới ${appInfo.latestVersion}` : ""}` : void 0;
   return <aside
     className={cn(
       "mica flex shrink-0 flex-col justify-between overflow-hidden bg-surface-container-low/95 p-space-sm transition-[width] duration-[180ms] ease-fluent",
@@ -89,7 +89,7 @@ export function NavRail() {
         className={cn("flex items-center gap-1 px-[6px] font-mono text-[10px] text-outline", collapsed ? "justify-center" : "justify-between")}
         title={versionTitle}
       >
-        {!collapsed && <span className="truncate">Omnira Studio</span>}
+        {!collapsed && <span className="truncate">NT Studio</span>}
         <span className="flex shrink-0 items-center gap-1">
           {appInfo?.updateAvailable && <span className="h-1.5 w-1.5 rounded-full bg-warning" aria-label="Có bản mới" />}
           {version}

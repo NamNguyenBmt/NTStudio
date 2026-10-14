@@ -1,5 +1,6 @@
 import { AccountMenu } from "./AccountMenu";
-import { Network, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { AppLogo } from "./AppLogo";
 import { Kbd } from "../ui/Kbd";
 import { useUiStore } from "../../stores/ui";
 import { ThemeToggle } from "./ThemeToggle";
@@ -14,8 +15,8 @@ export function TitleBar() {
   return <header className="app-drag mica relative z-40 flex h-titlebar shrink-0 items-center justify-between bg-surface-container-lowest/90">
     <div className={`flex min-w-0 items-center gap-space-sm ${isMac ? "pl-[76px]" : "pl-space-md"}`}>
       <div className="flex items-center gap-space-xs">
-        <Network size={18} className="text-secondary" strokeWidth={2} />
-        <span className="text-label-md font-semibold tracking-tight text-on-surface">Omnira Studio</span>
+        <AppLogo size={18} />
+        <span className="text-label-md font-semibold tracking-tight text-on-surface">NT Studio</span>
         <span className="rounded bg-surface-container-highest px-space-xs py-0.5 font-mono text-code text-primary" />
       </div>
       <div className="mx-space-xs h-4 w-px bg-outline-variant/40" />

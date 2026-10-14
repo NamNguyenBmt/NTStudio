@@ -154,7 +154,7 @@ export function BuyPlanDialog({ open, onClose, currentPlan, planCode }) {
     open={open}
     onClose={onClose}
     width={order ? 620 : 900}
-    title={order ? `Thanh toán đơn ${order.code}` : "Chọn gói Omnira Studio"}
+    title={order ? `Thanh toán đơn ${order.code}` : "Chọn gói NT Studio"}
     description={order ? `${order.planName} · ${vnd(order.amountVnd)}` : "Thanh toán chuyển khoản / QR – gói kích hoạt tự động khi tiền về"}
     footer={order ? <>
       <Button variant="subtle" onClick={() => setOrder(null)}>Chọn gói khác</Button>

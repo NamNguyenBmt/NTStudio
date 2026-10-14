@@ -1,10 +1,10 @@
 {
   "name": "omnira-studio",
-  "productName": "Omnira Studio",
-  "version": "1.0.2",
-  "description": "Omnira Studio – nền tảng quản lý & tự động hóa đa kênh trên desktop",
+  "productName": "NT Studio",
+  "version": "1.0.3",
+  "description": "NT Studio – nền tảng quản lý & tự động hóa đa kênh trên desktop",
   "main": "./out/main/index.js",
-  "author": "Omnira",
+  "author": "NT",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",

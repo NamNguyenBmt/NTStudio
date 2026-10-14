@@ -110,7 +110,7 @@ export async function freshTikTokCred(channelId, cred, signal) {
     const next2 = { ...cred, token: r2.access_token, refreshToken: r2.refresh_token ?? cred.refreshToken, expiresAt: Date.now() + r2.expires_in * 1e3 };
     writeCred(channelId, next2);
     markChannel(channelId, { tokenStatus: "valid", tokenExpiresAt: new Date(next2.expiresAt) });
-    console.info(`[publish] đã làm mới token TikTok (qua Omnira Cloud) cho kênh ${channelId.slice(0, 8)}`);
+    console.info(`[publish] đã làm mới token TikTok (qua NT Cloud) cho kênh ${channelId.slice(0, 8)}`);
     return next2;
   }
   const clientSecret = cred.clientSecret ?? readSecret("integration", "tiktok", "api_key");

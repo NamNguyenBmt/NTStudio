@@ -60,7 +60,7 @@ export function BillingPage() {
         <Button
           variant="subtle"
           disabled={recheck.isPending}
-          onClick={() => recheck.mutate(void 0, { onSuccess: () => toast.success("Đã cập nhật gói từ Omnira Cloud"), onError: (e) => toast.error(e.message) })}
+          onClick={() => recheck.mutate(void 0, { onSuccess: () => toast.success("Đã cập nhật gói từ NT Cloud"), onError: (e) => toast.error(e.message) })}
         >
           {recheck.isPending ? <LoaderCircle size={14} className="animate-spin" /> : <RefreshCw size={14} />}
           {" Cập nhật"}

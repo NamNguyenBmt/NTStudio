@@ -37,7 +37,7 @@ export function cancelCloudLogin() {
 
 export async function cloudLogin(p, scopes, ui) {
   const token = cloudCustomerToken();
-  if (!token) throw new PublishError("auth", "Phiên đăng nhập Omnira đã hết – đăng xuất rồi đăng nhập lại");
+  if (!token) throw new PublishError("auth", "Phiên đăng nhập NT đã hết – đăng xuất rồi đăng nhập lại");
   let start;
   try {
     start = await cloud(`/api/client/v1/oauth/${p}/start`, { method: "POST", body: { scopes: scopes || null }, token });
@@ -46,7 +46,7 @@ export async function cloudLogin(p, scopes, ui) {
   }
   const appId = new URL(start.authUrl).searchParams;
   console.info(
-    `[oauth] ${ui.provider}: bắt đầu đăng nhập qua Omnira Cloud · app ${appId.get("client_key") ?? appId.get("client_id") ?? "?"} · redirect ${start.redirectUri}`
+    `[oauth] ${ui.provider}: bắt đầu đăng nhập qua NT Cloud · app ${appId.get("client_key") ?? appId.get("client_id") ?? "?"} · redirect ${start.redirectUri}`
   );
   let polls = 20;
   if (ui.external) {
@@ -68,7 +68,7 @@ export async function cloudLogin(p, scopes, ui) {
     try {
       await fetch(`${start.redirectUri}?${params.toString()}`, { signal: AbortSignal.timeout(45e3) });
     } catch (e) {
-      throw toPublishError(e, `Không gửi được kết quả đăng nhập ${ui.provider} lên Omnira Cloud`);
+      throw toPublishError(e, `Không gửi được kết quả đăng nhập ${ui.provider} lên NT Cloud`);
     }
   }
   let cancelled = false;
@@ -90,12 +90,12 @@ async function pollSession(sessionId, token, provider, polls, cancelled) {
       throw toPublishError(e, `Không nhận được token ${provider}`);
     }
     if (r.status === "DONE" && r.token) {
-      console.info(`[oauth] ${provider}: Omnira Cloud đã đổi mã lấy token`);
+      console.info(`[oauth] ${provider}: NT Cloud đã đổi mã lấy token`);
       return r.token;
     }
     if (r.status === "ERROR") {
       const msg = r.error ?? "đăng nhập không thành công";
-      console.warn(`[oauth] ${provider}: Omnira Cloud báo lỗi – ${msg}`);
+      console.warn(`[oauth] ${provider}: NT Cloud báo lỗi – ${msg}`);
       throw new PublishError("permanent", /hủy|denied|từ chối/i.test(msg) ? "Bạn đã hủy / từ chối cấp quyền" : `${provider}: ${msg}`);
     }
     if (r.status === "EXPIRED" || r.status === "CONSUMED") throw new PublishError("permanent", `Phiên đăng nhập ${provider} đã hết hạn – thử lại`);
@@ -106,11 +106,11 @@ async function pollSession(sessionId, token, provider, polls, cancelled) {
 
 export async function cloudRefresh(p, tokenValue) {
   const token = cloudCustomerToken();
-  if (!token) throw new PublishError("auth", "Phiên đăng nhập Omnira đã hết – đăng nhập lại để làm mới token kênh");
+  if (!token) throw new PublishError("auth", "Phiên đăng nhập NT đã hết – đăng nhập lại để làm mới token kênh");
   try {
     return await cloud(`/api/client/v1/oauth/${p}/refresh`, { method: "POST", body: { token: tokenValue }, token });
   } catch (e) {
     if (e instanceof CloudError && e.code === "OAUTH_ERROR") throw new PublishError("auth", `Làm mới token thất bại – kết nối lại kênh (${e.message})`);
-    throw toPublishError(e, "Làm mới token qua Omnira Cloud thất bại");
+    throw toPublishError(e, "Làm mới token qua NT Cloud thất bại");
   }
 }

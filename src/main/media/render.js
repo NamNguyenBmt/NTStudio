@@ -177,7 +177,7 @@ export async function renderProject(jobId, signal, report) {
     report.note(`${countOf("veo")} cảnh chọn Video AI (Veo) nhưng Veo đang tắt/chưa có key Gemini (hoặc chưa đăng nhập Google Flow) – dùng ${allEngines.length ? "ảnh AI" : "video stock"}`);
   if ((countOf("image") || countOf("veo") && !veoReady) && !allEngines.length) report.note(`${imageEngineIssue() ?? "Ảnh AI chưa sẵn sàng"} → dùng video stock`);
   if (!stockChain.length && (countOf("stock") || countOf("image") || countOf("veo")))
-    report.note("Kho video miễn phí chưa sẵn sàng (cần kết nối mạng / gói Omnira) – cảnh không có media AI sẽ dùng nền màu");
+    report.note("Kho video miễn phí chưa sẵn sàng (cần kết nối mạng / gói NT) – cảnh không có media AI sẽ dùng nền màu");
   const dead = new Map();
   const fatal = (err) => {
     if (!(err instanceof AiError)) return null;

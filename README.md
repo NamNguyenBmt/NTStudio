@@ -8,6 +8,19 @@ Mã nguồn được dựng lại từ bản phát hành **Omnira Studio 1.0.2**
 Lịch sử git: tag `v1.0.1` (dựng từ bản 1.0.1), `v1.0.2` (thay đổi của 1.0.2: thử lại Google Flow khi lỗi tạm thời,
 thẻ "Nguồn tạo ảnh & video" trong Cài đặt), các commit sau đó tinh chỉnh để bản build trùng byte.
 
+## Đổi tên thành NT Studio
+
+Bản 1.0.3 (tag `v1.0.3`): đổi tên hiển thị "Omnira Studio" → "NT Studio" (cửa sổ, khay hệ thống,
+màn hình đăng nhập/license, tên exe, bộ cài `NT Studio Setup 1.0.3.exe`, shortcut), mọi chữ "Omnira" hiển thị
+(tài khoản, Cloud, AI, hỗ trợ, copyright) → "NT", và đổi icon/logo sang hình quả dâu
+(`resources/icon.png` 1024px, `src/renderer/src/assets/logo.png` qua `components/shell/AppLogo.jsx`).
+Từ đây bản build không còn trùng byte với 1.0.2 – muốn tái tạo bản gốc thì checkout tag `v1.0.2-exact-installer`.
+Giữ nguyên có chủ đích (không hiển thị cho người dùng): `appId` (`com.omnipage.studio`, để bộ cài mới nâng cấp đè lên
+bản cũ), tên gói npm `omnira-studio`, audience license `omnira-studio` (server kiểm tra), địa chỉ `api.omnira.io.vn`,
+khoá API `ai.omnira`, tên hàm/component nội bộ (`omniraChat`, `OmniraAiCard`…), tiền tố file tạm `omnira-`.
+`src/main/legacy-data.js`: máy đã có `%APPDATA%\Omnira Studio` thì tiếp tục dùng thư mục dữ liệu đó (trừ khi chạy với
+`--user-data-dir`).
+
 ## Chạy & đóng gói
 
 ```bash

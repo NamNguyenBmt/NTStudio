@@ -8,7 +8,7 @@ import { activeUser } from "../auth/session";
 const token = () => {
   const u = activeUser();
   const t = u ? readCloudSession(u.id)?.customerToken : null;
-  if (!t) throw new ApiError("AUTH", "Phiên đăng nhập Omnira đã hết – đăng xuất rồi đăng nhập lại");
+  if (!t) throw new ApiError("AUTH", "Phiên đăng nhập NT đã hết – đăng xuất rồi đăng nhập lại");
   return t;
 };
 

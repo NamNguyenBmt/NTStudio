@@ -1,3 +1,4 @@
+import "./legacy-data";
 import { BrowserWindow, ipcMain, app, nativeTheme, dialog, Notification } from "electron";
 import { savedTheme, applyTheme, createMainWindow } from "./window";
 import { IpcChannel } from "../shared/ipc";

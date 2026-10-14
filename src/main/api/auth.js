@@ -22,7 +22,7 @@ function toApiError(e) {
   if (!(e instanceof CloudError)) return new ApiError("INTERNAL", e instanceof Error ? e.message : String(e));
   if (e.offline) return new ApiError("INTERNAL", e.message);
   if (e.status === 401) return new ApiError("AUTH", "Email hoặc mật khẩu không đúng");
-  if (e.code === "EMAIL_EXISTS") return new ApiError("CONFLICT", "Email này đã có tài khoản Omnira – hãy đăng nhập");
+  if (e.code === "EMAIL_EXISTS") return new ApiError("CONFLICT", "Email này đã có tài khoản NT – hãy đăng nhập");
   if (e.code === "ACCOUNT_LOCKED") return new ApiError("AUTH", e.message);
   if (e.code === "WRONG_PASSWORD") return new ApiError("VALIDATION", "Mật khẩu hiện tại không đúng");
   return new ApiError(e.status === 409 ? "CONFLICT" : "VALIDATION", e.message);
@@ -34,11 +34,11 @@ async function linkLocal(customer, password) {
   const byEmail = findUser(customer.email);
   let user = byCloud ?? byEmail;
   if (user && !byCloud) {
-    if (user.cloudId && user.cloudId !== customer.id) throw new ApiError("CONFLICT", "Email này trên máy đang gắn với tài khoản Omnira khác");
+    if (user.cloudId && user.cloudId !== customer.id) throw new ApiError("CONFLICT", "Email này trên máy đang gắn với tài khoản NT khác");
     if (!await verifyPassword(password, user.passwordHash))
       throw new ApiError(
         "AUTH",
-        "Máy này đã có dữ liệu của tài khoản cùng email nhưng mật khẩu khác. Để liên kết và giữ dữ liệu: đổi mật khẩu tài khoản Omnira cho giống mật khẩu cũ trên máy, đăng nhập, rồi đổi lại sau."
+        "Máy này đã có dữ liệu của tài khoản cùng email nhưng mật khẩu khác. Để liên kết và giữ dữ liệu: đổi mật khẩu tài khoản NT cho giống mật khẩu cũ trên máy, đăng nhập, rồi đổi lại sau."
       );
   }
   if (!user) return createUser({ email: customer.email, displayName: customer.fullName, password, provider: "cloud", cloudId: customer.id });
@@ -95,7 +95,7 @@ async function startCloud(auth, password, remember, adoptLegacy = false) {
 const cloudToken = () => {
   const u = activeUser();
   const t = u ? readCloudSession(u.id)?.customerToken : null;
-  if (!t) throw new ApiError("AUTH", "Phiên đăng nhập Omnira đã hết – đăng xuất rồi đăng nhập lại");
+  if (!t) throw new ApiError("AUTH", "Phiên đăng nhập NT đã hết – đăng xuất rồi đăng nhập lại");
   return t;
 };
 
@@ -177,10 +177,10 @@ export const authHandlers = {
         const ok = user ? await verifyPassword(password, user.passwordHash) : (await verifyPassword(password, await dummyHash), false);
         if (!user || !ok) {
           recordFailure(email);
-          throw new ApiError("AUTH", "Không kết nối được Omnira Cloud và mật khẩu không khớp mật khẩu đã lưu trên máy");
+          throw new ApiError("AUTH", "Không kết nối được NT Cloud và mật khẩu không khớp mật khẩu đã lưu trên máy");
         }
         if (user.provider !== "cloud" || !verifyLicenseToken(readCloudSession(user.id)?.licenseToken))
-          throw new ApiError("INTERNAL", "Không kết nối được Omnira Cloud – cần có mạng để đăng nhập lần này");
+          throw new ApiError("INTERNAL", "Không kết nối được NT Cloud – cần có mạng để đăng nhập lần này");
         clearFailures(email);
         start(user, remember, password);
         return toAuthUser(activeUser());

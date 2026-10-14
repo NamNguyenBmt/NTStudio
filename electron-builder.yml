@@ -1,6 +1,6 @@
 appId: com.omnipage.studio
-productName: Omnira Studio
-copyright: Copyright © 2026 Omnira
+productName: NT Studio
+copyright: Copyright © 2026 NT
 directories:
   buildResources: resources
   output: dist
@@ -29,7 +29,7 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
-  shortcutName: Omnira Studio
+  shortcutName: NT Studio
 publish:
   provider: github
   owner: buidinhdat

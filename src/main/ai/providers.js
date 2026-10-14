@@ -42,7 +42,7 @@ export function requireKey(provider) {
   if (!row) throw new AiError("no_provider", `Chưa có nhà cung cấp ${provider}`);
   if (MANAGED_PROVIDERS.has(provider)) {
     const k2 = resolveKey(row);
-    if (!k2) throw new AiError("no_provider", "Kho video miễn phí chưa sẵn sàng – kiểm tra kết nối mạng / gói Omnira");
+    if (!k2) throw new AiError("no_provider", "Kho video miễn phí chưa sẵn sàng – kiểm tra kết nối mạng / gói NT");
     return { key: k2.key, baseUrl: k2.baseUrl, row };
   }
   if (!row.enabled) throw new AiError("no_provider", `${row.label} đang tắt trong Cài đặt`);
