@@ -34,6 +34,7 @@ import { planHandlers } from "./plan";
 import { analyticsHandlers } from "./analytics";
 import { filmHandlers } from "./film";
 import { flowHandlers } from "./flow";
+import { reupHandlers } from "./reup";
 import { backgroundPrefs, setBackgroundPrefs } from "../tray";
 
 const QUOTA_ENDPOINTS = new Set([
@@ -67,6 +68,7 @@ const handlers = {
   ...localTtsHandlers,
   ...flowHandlers,
   ...filmHandlers,
+  ...reupHandlers,
   "system.dbInfo": () => ({ path: dbFilePath(), seeded: isSeeded() }),
   "system.pickImage": async () => {
     const opts = {

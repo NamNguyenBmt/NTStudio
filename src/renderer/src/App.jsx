@@ -14,6 +14,7 @@ import { PlanPage } from "./pages/plan/PlanPage";
 import { AnalyticsPage } from "./pages/analytics/AnalyticsPage";
 import { GuidePage } from "./pages/guide/GuidePage";
 import { FilmPage } from "./pages/film/FilmPage";
+import { ReupPage } from "./pages/reup/ReupPage";
 import { AuthGate } from "./pages/auth/AuthGate";
 import { BillingPage } from "./pages/billing/BillingPage";
 import { FeatureGate } from "./components/FeatureGate";
@@ -33,6 +34,7 @@ export function App() {
           <Route path="studio" element={<FeatureGate feature="STUDIO"><StudioPage /></FeatureGate>} />
           <Route path="film" element={<FeatureGate feature="FILM"><FilmPage /></FeatureGate>} />
           <Route path="film/:id" element={<FeatureGate feature="FILM"><FilmPage /></FeatureGate>} />
+          <Route path="reup" element={<ReupPage />} />
           <Route path="calendar" element={<FeatureGate feature="CALENDAR"><CalendarPage /></FeatureGate>} />
           <Route path="inbox" element={<FeatureGate feature="INBOX"><InboxPage /></FeatureGate>} />
           <Route path="analytics" element={<FeatureGate feature="ANALYTICS"><AnalyticsPage /></FeatureGate>} />

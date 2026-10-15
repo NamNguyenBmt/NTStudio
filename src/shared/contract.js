@@ -838,5 +838,24 @@ export const contract = {
   "system.openLogs": def()(none),
   /** Chạy nền dưới khay hệ thống / khởi động cùng Windows (theo máy) */
   "system.background": def()(none),
-  "system.setBackground": def()(z.object({ closeToTray: z.boolean().optional(), launchAtLogin: z.boolean().optional() }))
+  "system.setBackground": def()(z.object({ closeToTray: z.boolean().optional(), launchAtLogin: z.boolean().optional() })),
+  // Reup – cầu nối tới HaizFlow chính thức (không nhúng mã HaizFlow, xem src/main/reup/haizflow.js)
+  "reup.status": def()(none),
+  /** Bản phát hành mới nhất trên GitHub của tác giả */
+  "reup.latest": def()(none),
+  /** Tải bộ cài chính thức (kiểm SHA-256) rồi mở trình cài đặt */
+  "reup.install": def()(none),
+  "reup.launch": def()(none),
+  /** Video thành phẩm trong thư mục xuất / dự án HaizFlow và thư mục người dùng thêm */
+  "reup.outputs": def()(none),
+  "reup.pickExe": def()(none),
+  "reup.resetExe": def()(none),
+  "reup.addFolder": def()(none),
+  "reup.removeFolder": def()(z.object({ path: z.string().min(1).max(1e3) })),
+  "reup.reveal": def()(z.object({ path: z.string().min(1).max(1e3) })),
+  "reup.import": def()(z.object({
+    paths: z.array(z.string().min(1).max(1e3)).min(1).max(50),
+    workspaceId: id.nullish(),
+    aspect: z.enum(["9:16", "1:1", "4:5", "16:9"]).nullish()
+  }))
 };
