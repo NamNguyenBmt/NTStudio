@@ -1,7 +1,7 @@
 {
   "name": "omnira-studio",
   "productName": "NT Studio",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "NT Studio – nền tảng quản lý & tự động hóa đa kênh trên desktop",
   "main": "./out/main/index.js",
   "author": "NT",
