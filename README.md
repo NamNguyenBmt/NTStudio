@@ -55,6 +55,17 @@ API mà app gọi tới (tiền tố `/api/client/v1` trừ dòng `/api/public`)
 | | `notifications`, `notifications/seen` | Thông báo trong app |
 | | `/api/public/app` | Bản mới nhất, bắt buộc cập nhật, thông báo chung |
 
+## Phát hành & tự cập nhật
+
+```bash
+npm run release            # 1.0.4 → 1.0.5: build, commit + push, đăng bộ cài lên GitHub Releases
+npm run release -- minor   # 1.0.x → 1.1.0
+```
+
+Bộ cài nằm ở [Releases](https://github.com/NamNguyenBmt/NTStudio/releases) (repo công khai). App đã cài
+(`src/main/updater.js`, electron-updater) kiểm tra lúc mở và mỗi 30 phút; có bản mới thì hỏi, đồng ý → tải về, tự tắt,
+cài im lặng, mở lại. Chọn "Để sau" thì không hỏi lại bản đó cho tới lần mở app sau. Chỉ chạy ở bản đã cài (không ở `npm run dev`).
+
 ## Chạy & đóng gói
 
 ```bash

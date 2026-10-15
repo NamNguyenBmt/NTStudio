@@ -39,15 +39,22 @@ console.log(`\n== Phát hành NT Studio ${version}\n`);
 
 try {
   run("npm run build");
-  run("npx electron-builder --win --x64 --publish always", { env: { ...process.env, GH_TOKEN: token } });
 } catch {
-  console.error(`\nPhát hành ${version} thất bại – trả lại số phiên bản cũ`);
+  console.error(`\nBuild ${version} lỗi – trả lại số phiên bản cũ`);
   run("git checkout -- package.json package-lock.json");
   process.exit(1);
 }
 
+// Đẩy mã nguồn lên trước: GitHub tạo tag v<version> cho release tại commit mới nhất của main
 run("git add -A");
 run(`git commit -q -m "Phát hành v${version}"`);
-run(`git tag v${version}`);
-run("git push -q origin main --tags");
+run("git push -q origin main");
+
+try {
+  run("npx electron-builder --win --x64 --publish always", { env: { ...process.env, GH_TOKEN: token } });
+} catch {
+  console.error(`\nĐăng release ${version} lỗi – mã nguồn đã push; chạy lại: npx electron-builder --win --x64 --publish always`);
+  process.exit(1);
+}
+run("git fetch -q origin --tags");
 console.log(`\n== Đã phát hành ${version}: https://github.com/NamNguyenBmt/NTStudio/releases/tag/v${version}`);
