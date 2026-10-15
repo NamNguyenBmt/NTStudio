@@ -55,6 +55,8 @@ export function setupUpdater(windowGetter) {
   if (!app.isPackaged) return;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+  // Bộ cài NSIS đầy đủ, không dùng web installer
+  autoUpdater.disableWebInstaller = true;
   autoUpdater.logger = { info: (m) => console.info("[update]", m), warn: (m) => console.warn("[update]", m), error: (m) => console.error("[update]", m), debug: () => void 0 };
   autoUpdater.on("update-available", (info) => void onAvailable(info));
   autoUpdater.on("download-progress", (p) => progress(Math.max(0.02, p.percent / 100)));
