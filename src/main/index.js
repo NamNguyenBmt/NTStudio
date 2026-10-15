@@ -18,6 +18,7 @@ import { handleMediaProtocol } from "./media/protocol";
 import { startHidden, showWindow, setupTray, hideOnClose } from "./tray";
 import { CLOUD_ENABLED } from "./cloud/client";
 import { localUser } from "./auth/local";
+import { setupUpdater } from "./updater";
 
 let mainWindow = null;
 let stopStats = null;
@@ -82,6 +83,7 @@ ${err instanceof Error ? err.message : String(err)}`);
     mainWindow = createMainWindow({ hidden: startHidden() });
     hideOnClose(mainWindow);
     setupTray(() => mainWindow);
+    setupUpdater(() => mainWindow);
     attachRendererLogging(mainWindow.webContents);
     onLicenseState(() => {
       if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(IpcChannel.LicenseChanged);

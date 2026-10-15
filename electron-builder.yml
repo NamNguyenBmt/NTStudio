@@ -34,3 +34,4 @@ publish:
   provider: github
   owner: NamNguyenBmt
   repo: NTStudio
+  releaseType: release
