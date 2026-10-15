@@ -25,8 +25,8 @@ khoá API `ai.omnira`, tên hàm/component nội bộ (`omniraChat`, `OmniraAiCa
 
 Server cũ `api.omnira.io.vn` đã bỏ. `src/main/cloud/client.js`: `DEFAULT_CLOUD_URL = ""` → `CLOUD_ENABLED = false`, app chạy
 không cần server:
-- Tạo tài khoản / đăng nhập ngay trên máy (mật khẩu băm trong `auth/users.json`), không mã email, không quên mật khẩu.
-  Tài khoản cũ đã có trên máy đăng nhập bằng mật khẩu cũ.
+- Không có màn đăng nhập: khi khởi động, `src/main/auth/local.js` tự mở tài khoản dùng gần nhất trên máy (giữ dữ liệu cũ),
+  máy mới thì tự tạo tài khoản nội bộ `local@ntstudio.app`. Ẩn menu tài khoản (đổi mật khẩu, đăng xuất) và nút làm mới license.
 - License luôn "active": gói "Bản không server", mở đủ tính năng, không giới hạn kênh / luồng Flow / máy.
 - Ẩn "Gói & thanh toán", thẻ "AI NT"; AI văn bản dùng key riêng nhập trong Cài đặt.
 - Kết nối Facebook / TikTok / YouTube dùng ứng dụng riêng của bạn (Cài đặt → Ứng dụng Meta / TikTok, Hướng dẫn kết nối → YouTube).

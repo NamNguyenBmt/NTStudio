@@ -16,6 +16,8 @@ import { onQuotaChange } from "./quota";
 import { openSession, closeSession } from "./auth/session";
 import { handleMediaProtocol } from "./media/protocol";
 import { startHidden, showWindow, setupTray, hideOnClose } from "./tray";
+import { CLOUD_ENABLED } from "./cloud/client";
+import { localUser } from "./auth/local";
 
 let mainWindow = null;
 let stopStats = null;
@@ -45,7 +47,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on("second-instance", () => showWindow());
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     app.setAppUserModelId("com.omnipage.studio");
     initLogger();
     try {
@@ -55,14 +57,22 @@ if (!app.requestSingleInstanceLock()) {
       console.error("[data] không ghi được dấu thư mục dữ liệu", err);
     }
     nativeTheme.themeSource = savedTheme();
-    const remembered = restoreSession();
+    let remembered = restoreSession();
+    // Không server: bỏ màn đăng nhập, tự mở dữ liệu trên máy
+    if (!remembered && !CLOUD_ENABLED) {
+      try {
+        remembered = await localUser();
+      } catch (err) {
+        console.error("[auth] không tạo được tài khoản trên máy", err);
+      }
+    }
     if (remembered) {
       try {
         openSession(remembered);
       } catch (err) {
         console.error("[auth] không mở được dữ liệu của phiên đã ghi nhớ", err);
         forgetSession(remembered.id);
-        dialog.showErrorBox("OmniPage Studio – lỗi dữ liệu", `Không mở được dữ liệu của tài khoản ${remembered.email}:
+        dialog.showErrorBox("NT Studio – lỗi dữ liệu", `Không mở được dữ liệu của tài khoản ${remembered.email}:
 ${err instanceof Error ? err.message : String(err)}`);
       }
     }

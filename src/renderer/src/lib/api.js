@@ -6,7 +6,7 @@ const noop = () => {
 const browserFallback = {
   window: { minimize: noop, toggleMaximize: noop, close: noop, onStateChanged: () => noop },
   app: {
-    info: async () => ({ name: "OmniPage Studio", version: "2.5.0", platform: "browser", electron: "-" }),
+    info: async () => ({ name: "NT Studio", version: "2.5.0", platform: "browser", electron: "-" }),
     setTheme: noop,
     onNavigate: () => noop,
     onLicenseChanged: () => noop

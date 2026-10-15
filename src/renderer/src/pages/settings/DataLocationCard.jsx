@@ -29,7 +29,7 @@ export function DataLocationCard() {
   const runUseExisting = async () => {
     const ok = await confirmDialog({
       title: "Dùng thư mục dữ liệu có sẵn",
-      message: "Chọn thư mục dữ liệu OmniPage đã sao lưu (vd chép từ máy cũ). App sẽ khởi động lại và dùng thư mục đó – đăng nhập bằng email / mật khẩu của dữ liệu đó.",
+      message: "Chọn thư mục dữ liệu NT Studio đã sao lưu (vd chép từ máy cũ). App sẽ khởi động lại và dùng thư mục đó – đăng nhập bằng email / mật khẩu của dữ liệu đó.",
       confirmLabel: "Chọn thư mục"
     });
     if (!ok) return;
@@ -64,7 +64,7 @@ export function DataLocationCard() {
       <b className="text-on-surface">Đổi máy tính:</b>
       <ol className="mt-1 list-decimal pl-5">
         <li>Tắt hẳn app, sao lưu nguyên thư mục trên (ổ cứng ngoài, Google Drive…).</li>
-        <li>Cài OmniPage trên máy mới, chép thư mục sang.</li>
+        <li>Cài NT Studio trên máy mới, chép thư mục sang.</li>
         <li>Màn hình đăng nhập → "Dùng thư mục dữ liệu có sẵn" → chọn thư mục đó.</li>
         <li>
           {"Đăng nhập bằng email & mật khẩu cũ – API key, token kênh tự mở lại (két được mã hóa thêm bằng mật khẩu đăng nhập)."}

@@ -13,6 +13,7 @@ import "../ui/StatusDot";
 import "../ui/toast";
 import "../../stores/system";
 import { useUiStore } from "../../stores/ui";
+import { useApiQuery } from "../../lib/api";
 
 export function CommandPalette() {
   const open = useUiStore((s) => s.commandOpen);
@@ -22,9 +23,11 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef(null);
+  const { data: lic } = useApiQuery("license.state", void 0, { staleTime: 6e4 });
+  const local = lic?.plan === "local";
   const commands = useMemo(
     () => [
-      ...navItems.map((n) => ({
+      ...navItems.filter((n) => !(local && n.path === "/billing")).map((n) => ({
         id: `nav:${n.path}`,
         label: n.label,
         group: "Điều hướng",
@@ -34,7 +37,7 @@ export function CommandPalette() {
       })),
       { id: "ui:rail", label: "Thu gọn / mở rộng thanh điều hướng", group: "Giao diện", icon: PanelLeft, shortcut: "Ctrl+B", run: toggleRail }
     ],
-    [navigate, toggleRail]
+    [navigate, toggleRail, local]
   );
   const results = useMemo(() => {
     const q = normalize(query.trim());

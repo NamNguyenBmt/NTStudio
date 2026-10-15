@@ -26,7 +26,7 @@ export async function loopbackAuth(opts) {
           "Chưa kết nối được",
           `${opts.provider} trả về: ${err === "access_denied" ? "bạn đã từ chối cấp quyền" : err}. Bạn có thể đóng tab này và thử lại trong OmniPage Studio.`,
           false
-        ) : PAGE(`Đã kết nối ${opts.provider}`, "Bạn có thể đóng tab này và quay lại OmniPage Studio.", true)
+        ) : PAGE(`Đã kết nối ${opts.provider}`, "Bạn có thể đóng tab này và quay lại NT Studio.", true)
       );
       finish(() => resolve(url.searchParams));
     });

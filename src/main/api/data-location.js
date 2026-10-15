@@ -58,7 +58,7 @@ export const dataLocationHandlers = {
   },
   /** Chép toàn bộ dữ liệu sang thư mục mới rồi khởi động lại app dùng thư mục đó. */
   "storage.move": async () => {
-    const picked = await pickFolder("Chọn thư mục mới để lưu dữ liệu OmniPage");
+    const picked = await pickFolder("Chọn thư mục mới để lưu dữ liệu NT Studio");
     if (!picked) return { moved: false, root: dataRoot() };
     const from = dataRoot();
     const target = isDataDir(picked) ? picked : readdirSync(picked).length ? join(picked, "OmniPage Data") : picked;
@@ -66,7 +66,7 @@ export const dataLocationHandlers = {
     if (resolve(target).startsWith(resolve(from) + "\\") || resolve(target).startsWith(resolve(from) + "/"))
       throw new ApiError("VALIDATION", "Không chọn thư mục nằm bên trong thư mục dữ liệu hiện tại");
     if (isDataDir(target) && existsSync(join(target, "auth", "users.json")))
-      throw new ApiError("VALIDATION", 'Thư mục này đã chứa dữ liệu OmniPage khác – chọn thư mục trống, hoặc dùng "Dùng thư mục dữ liệu có sẵn"');
+      throw new ApiError("VALIDATION", 'Thư mục này đã chứa dữ liệu NT Studio khác – chọn thư mục trống, hoặc dùng "Dùng thư mục dữ liệu có sẵn"');
     const need = dirSize(join(from, "users")) + dirSize(join(from, "auth"));
     try {
       const fs = statfsSync(picked);
@@ -84,7 +84,7 @@ export const dataLocationHandlers = {
   },
   /** Máy mới: trỏ tới thư mục dữ liệu đã sao lưu / chép sang. */
   "storage.useExisting": async () => {
-    const picked = await pickFolder("Chọn thư mục dữ liệu OmniPage đã sao lưu");
+    const picked = await pickFolder("Chọn thư mục dữ liệu NT Studio đã sao lưu");
     if (!picked) return { changed: false, root: dataRoot() };
     const dir = isDataDir(picked) ? picked : isDataDir(join(picked, "OmniPage Data")) ? join(picked, "OmniPage Data") : null;
     if (!dir) throw new ApiError("VALIDATION", "Thư mục này không phải thư mục dữ liệu OmniPage (thiếu omnipage-data.json / auth/users.json)");

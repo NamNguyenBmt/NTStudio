@@ -444,7 +444,7 @@ function DataFolderLink() {
       disabled={use.isPending}
       onClick={() => use.mutate(void 0)}
       className="flex items-center gap-1 self-start text-primary hover:underline disabled:opacity-50"
-      title="Đổi máy: chọn thư mục dữ liệu OmniPage đã chép từ máy cũ, rồi đăng nhập bằng mật khẩu cũ"
+      title="Đổi máy: chọn thư mục dữ liệu NT Studio đã chép từ máy cũ, rồi đăng nhập bằng mật khẩu cũ"
     >
       {use.isPending ? <LoaderCircle size={12} className="animate-spin" /> : <FolderInput size={12} />}
       {" Dùng thư mục dữ liệu có sẵn (chuyển từ máy khác)…"}

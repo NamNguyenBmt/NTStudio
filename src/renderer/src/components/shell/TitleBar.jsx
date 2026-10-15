@@ -1,6 +1,7 @@
 import { AccountMenu } from "./AccountMenu";
 import { Search } from "lucide-react";
 import { AppLogo } from "./AppLogo";
+import { useApiQuery } from "../../lib/api";
 import { Kbd } from "../ui/Kbd";
 import { useUiStore } from "../../stores/ui";
 import { ThemeToggle } from "./ThemeToggle";
@@ -12,6 +13,9 @@ import { RefreshLicenseButton } from "./RefreshLicenseButton";
 
 export function TitleBar() {
   const setCommandOpen = useUiStore((s) => s.setCommandOpen);
+  // Bản dùng một mình (không server): không có tài khoản / license để quản lý
+  const { data: lic } = useApiQuery("license.state", void 0, { staleTime: 6e4 });
+  const local = lic?.plan === "local";
   return <header className="app-drag mica relative z-40 flex h-titlebar shrink-0 items-center justify-between bg-surface-container-lowest/90">
     <div className={`flex min-w-0 items-center gap-space-sm ${isMac ? "pl-[76px]" : "pl-space-md"}`}>
       <div className="flex items-center gap-space-xs">
@@ -37,9 +41,9 @@ export function TitleBar() {
       <div className="no-drag flex items-center gap-space-xs pr-space-sm">
         <FlowCredits />
         <NotificationBell />
-        <RefreshLicenseButton />
+        {!local && <RefreshLicenseButton />}
         <ThemeToggle />
-        <AccountMenu />
+        {!local && <AccountMenu />}
       </div>
       {!isMac && <WindowControls />}
     </div>
