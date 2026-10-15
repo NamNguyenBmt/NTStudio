@@ -7,13 +7,17 @@ import { licenseUsable, licenseLimits } from "./license/index";
 let needsPick = false;
 const LIMIT_KEY = "quota.lastLimit";
 
+// settings.value không nhận NULL → "không giới hạn" (limit = null) lưu thành chuỗi UNLIMITED
+const UNLIMITED = "unlimited";
+
 function lastLimit() {
   const row = getDb().select().from(settings).where(eq(settings.key, LIMIT_KEY)).get();
-  return row ? row.value : void 0;
+  return row ? row.value === UNLIMITED ? null : row.value : void 0;
 }
 
 function saveLimit(limit) {
-  getDb().insert(settings).values({ key: LIMIT_KEY, value: limit }).onConflictDoUpdate({ target: settings.key, set: { value: limit, updatedAt: new Date() } }).run();
+  const value = limit ?? UNLIMITED;
+  getDb().insert(settings).values({ key: LIMIT_KEY, value }).onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: new Date() } }).run();
 }
 
 const listeners = new Set();
